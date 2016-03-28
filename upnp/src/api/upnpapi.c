@@ -1312,118 +1312,6 @@ int UpnpRenewSubscriptionAsync(
 
 #if EXCLUDE_SOAP == 0
 #ifdef INCLUDE_CLIENT_APIS
-int UpnpSendAction(
-	UpnpClient_Handle Hnd,
-	const char *ActionURL_const,
-	const char *ServiceType_const,
-	const char *DevUDN_const,
-	IXML_Document *Action,
-	IXML_Document **RespNodePtr)
-{
-    struct Handle_Info *SInfo = NULL;
-    int retVal = 0;
-    char *ActionURL = (char *)ActionURL_const;
-    char *ServiceType = (char *)ServiceType_const;
-    /* udn not used? */
-    /*char *DevUDN = (char *)DevUDN_const;*/
-
-    if( UpnpSdkInit != 1 ) {
-        return UPNP_E_FINISH;
-    }
-
-    UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-        "Inside UpnpSendAction\n");
-    if (DevUDN_const !=NULL) {
-	UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-		"non NULL DevUDN is ignored\n");
-    }
-    DevUDN_const = NULL;
-
-    HandleReadLock();
-    switch( GetHandleInfo( Hnd, &SInfo ) ) {
-    case HND_CLIENT:
-        break;
-    default:
-        HandleUnlock();
-        return UPNP_E_INVALID_HANDLE;
-    }
-    HandleUnlock();
-
-    if( ActionURL == NULL ) {
-        return UPNP_E_INVALID_PARAM;
-    }
-
-    if( ServiceType == NULL || Action == NULL || RespNodePtr == NULL
-        || DevUDN_const != NULL ) {
-
-        return UPNP_E_INVALID_PARAM;
-    }
-
-    retVal = SoapSendAction( ActionURL, ServiceType, Action, RespNodePtr );
-
-    UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-	"Exiting UpnpSendAction\n");
-
-    return retVal;
-}
-
-
-int UpnpSendActionEx(
-	UpnpClient_Handle Hnd,
-	const char *ActionURL_const,
-	const char *ServiceType_const,
-	const char *DevUDN_const,
-	IXML_Document *Header,
-	IXML_Document *Action,
-	IXML_Document **RespNodePtr)
-{
-    struct Handle_Info *SInfo = NULL;
-    int retVal = 0;
-    char *ActionURL = (char *)ActionURL_const;
-    char *ServiceType = (char *)ServiceType_const;
-    /* udn not used? */
-    /*char *DevUDN = (char *)DevUDN_const;*/
-
-    if( UpnpSdkInit != 1 ) {
-        return UPNP_E_FINISH;
-    }
-
-    UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-        "Inside UpnpSendActionEx\n");
-
-    if( Header == NULL ) {
-        retVal = UpnpSendAction( Hnd, ActionURL_const, ServiceType_const,
-                                 DevUDN_const, Action, RespNodePtr );
-        return retVal;
-    }
-
-    HandleReadLock();
-    switch( GetHandleInfo( Hnd, &SInfo ) ) {
-    case HND_CLIENT:
-        break;
-    default:
-        HandleUnlock();
-        return UPNP_E_INVALID_HANDLE;
-    }
-    HandleUnlock();
-
-    if( ActionURL == NULL ) {
-        return UPNP_E_INVALID_PARAM;
-    }
-    if( ServiceType == NULL || Action == NULL || RespNodePtr == NULL ) {
-        return UPNP_E_INVALID_PARAM;
-    }
-
-    retVal = SoapSendActionEx( ActionURL, ServiceType, Header,
-                               Action, RespNodePtr );
-
-    UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-        "Exiting UpnpSendAction \n");
-
-    return retVal;
-}
-
-
 int UpnpSendActionAsync(
 	UpnpClient_Handle Hnd,
 	const char *ActionURL_const,
@@ -1446,58 +1334,58 @@ int UpnpSendActionAsync(
     memset(&job, 0, sizeof(job));
 
     if(UpnpSdkInit != 1) {
-        return UPNP_E_FINISH;
+	return UPNP_E_FINISH;
     }
-
     UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-        "Inside UpnpSendActionAsync\n");
+	    "Inside UpnpSendActionAsync\n");
 
     HandleReadLock();
     switch( GetHandleInfo( Hnd, &SInfo ) ) {
-    case HND_CLIENT:
-        break;
-    default:
-        HandleUnlock();
-        return UPNP_E_INVALID_HANDLE;
+	case HND_CLIENT:
+	    break;
+	default:
+	    HandleUnlock();
+	    return UPNP_E_INVALID_HANDLE;
     }
     HandleUnlock();
 
     if( ActionURL == NULL ) {
-        return UPNP_E_INVALID_PARAM;
+	return UPNP_E_INVALID_PARAM;
     }
     if( ServiceType == NULL ||
-        Act == NULL || Fun == NULL || DevUDN_const != NULL ) {
-        return UPNP_E_INVALID_PARAM;
+	    Act == NULL || Fun == NULL || DevUDN_const != NULL ) {
+	return UPNP_E_INVALID_PARAM;
     }
     tmpStr = ixmlPrintNode( ( IXML_Node * ) Act );
     if( tmpStr == NULL ) {
-        return UPNP_E_INVALID_ACTION;
+	return UPNP_E_INVALID_ACTION;
     }
 
     Param =
-        ( struct UpnpNonblockParam * )
-        malloc( sizeof( struct UpnpNonblockParam ) );
+	( struct UpnpNonblockParam * )
+	malloc( sizeof( struct UpnpNonblockParam ) );
 
     if( Param == NULL ) {
-        ixmlFreeDOMString( tmpStr );
-        return UPNP_E_OUTOF_MEMORY;
+	ixmlFreeDOMString( tmpStr );
+	return UPNP_E_OUTOF_MEMORY;
     }
     memset( Param, 0, sizeof( struct UpnpNonblockParam ) );
 
     Param->FunName = ACTION;
     Param->Handle = Hnd;
     strncpy( Param->Url, ActionURL, sizeof ( Param->Url ) - 1 );
-    strncpy( Param->ServiceType, ServiceType, sizeof ( Param->ServiceType ) - 1 );
+    strncpy( Param->ServiceType, ServiceType,
+	    sizeof ( Param->ServiceType ) - 1 );
 
     rc = ixmlParseBufferEx( tmpStr, &( Param->Act ) );
     if( rc != IXML_SUCCESS ) {
-        free( Param );
-        ixmlFreeDOMString( tmpStr );
-        if( rc == IXML_INSUFFICIENT_MEMORY ) {
-            return UPNP_E_OUTOF_MEMORY;
-        } else {
-            return UPNP_E_INVALID_ACTION;
-        }
+	free( Param );
+	ixmlFreeDOMString( tmpStr );
+	if( rc == IXML_INSUFFICIENT_MEMORY ) {
+	    return UPNP_E_OUTOF_MEMORY;
+	} else {
+	    return UPNP_E_INVALID_ACTION;
+	}
     }
     ixmlFreeDOMString( tmpStr );
     Param->Cookie = ( void * )Cookie_const;
@@ -1505,197 +1393,6 @@ int UpnpSendActionAsync(
 
     TPJobInit( &job, ( start_routine ) UpnpThreadDistribution, Param );
     TPJobSetFreeFunction( &job, ( free_routine ) free );
-
-    TPJobSetPriority( &job, MED_PRIORITY );
-    if (ThreadPoolAdd( &gSendThreadPool, &job, NULL ) != 0) {
-	free(Param);
-    }
-
-    UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-        "Exiting UpnpSendActionAsync \n");
-
-    return UPNP_E_SUCCESS;
-}
-
-
-int UpnpSendActionExAsync(
-	UpnpClient_Handle Hnd,
-	const char *ActionURL_const,
-	const char *ServiceType_const,
-	const char *DevUDN_const,
-	IXML_Document *Header,
-	IXML_Document *Act,
-	Upnp_FunPtr Fun,
-	const void *Cookie_const)
-{
-    struct Handle_Info *SInfo = NULL;
-    struct UpnpNonblockParam *Param;
-    DOMString tmpStr;
-    DOMString headerStr = NULL;
-    char *ActionURL = ( char * )ActionURL_const;
-    char *ServiceType = ( char * )ServiceType_const;
-    ThreadPoolJob job;
-    int retVal = 0;
-
-    memset(&job, 0, sizeof(job));
-
-    if( UpnpSdkInit != 1 ) {
-        return UPNP_E_FINISH;
-    }
-
-    UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-        "Inside UpnpSendActionExAsync\n");
-
-    if( Header == NULL ) {
-        retVal = UpnpSendActionAsync( Hnd, ActionURL_const,
-                                      ServiceType_const, DevUDN_const, Act,
-                                      Fun, Cookie_const );
-        return retVal;
-    }
-
-    HandleReadLock();
-    switch( GetHandleInfo( Hnd, &SInfo ) ) {
-    case HND_CLIENT:
-        break;
-    default:
-        HandleUnlock();
-        return UPNP_E_INVALID_HANDLE;
-    }
-    HandleUnlock();
-
-    if( ActionURL == NULL ) {
-        return UPNP_E_INVALID_PARAM;
-    }
-    if( ServiceType == NULL || Act == NULL || Fun == NULL ) {
-        return UPNP_E_INVALID_PARAM;
-    }
-
-    headerStr = ixmlPrintNode( ( IXML_Node * ) Header );
-
-    tmpStr = ixmlPrintNode( ( IXML_Node * ) Act );
-    if( tmpStr == NULL ) {
-        ixmlFreeDOMString( headerStr );
-        return UPNP_E_INVALID_ACTION;
-    }
-
-    Param =
-        ( struct UpnpNonblockParam * )
-        malloc( sizeof( struct UpnpNonblockParam ) );
-    if( Param == NULL ) {
-        ixmlFreeDOMString( tmpStr );
-        ixmlFreeDOMString( headerStr );
-        return UPNP_E_OUTOF_MEMORY;
-    }
-    memset( Param, 0, sizeof( struct UpnpNonblockParam ) );
-
-    Param->FunName = ACTION;
-    Param->Handle = Hnd;
-    strncpy( Param->Url, ActionURL, sizeof( Param->Url ) - 1 );
-    strncpy( Param->ServiceType, ServiceType,
-	sizeof ( Param->ServiceType ) - 1 );
-    retVal = ixmlParseBufferEx( headerStr, &( Param->Header ) );
-    if( retVal != IXML_SUCCESS ) {
-        free( Param );
-        ixmlFreeDOMString( tmpStr );
-        ixmlFreeDOMString( headerStr );
-        if( retVal == IXML_INSUFFICIENT_MEMORY ) {
-            return UPNP_E_OUTOF_MEMORY;
-        } else {
-            return UPNP_E_INVALID_ACTION;
-        }
-    }
-
-    retVal = ixmlParseBufferEx( tmpStr, &( Param->Act ) );
-    if( retVal != IXML_SUCCESS ) {
-        ixmlDocument_free( Param->Header );
-        free( Param );
-        ixmlFreeDOMString( tmpStr );
-        ixmlFreeDOMString( headerStr );
-        if( retVal == IXML_INSUFFICIENT_MEMORY ) {
-            return UPNP_E_OUTOF_MEMORY;
-        } else {
-            return UPNP_E_INVALID_ACTION;
-        }
-
-    }
-
-    ixmlFreeDOMString( tmpStr );
-    ixmlFreeDOMString( headerStr );
-
-    Param->Cookie = ( void * )Cookie_const;
-    Param->Fun = Fun;
-
-    TPJobInit( &job, ( start_routine ) UpnpThreadDistribution, Param );
-    TPJobSetFreeFunction( &job, ( free_routine ) free );
-
-    TPJobSetPriority( &job, MED_PRIORITY );
-    if (ThreadPoolAdd( &gSendThreadPool, &job, NULL ) != 0) {
-	free(Param);
-    }
-
-    UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-        "Exiting UpnpSendActionAsync\n");
-
-    return UPNP_E_SUCCESS;
-}
-
-
-int UpnpGetServiceVarStatusAsync(
-	UpnpClient_Handle Hnd,
-	const char *ActionURL_const,
-	const char *VarName_const,
-	Upnp_FunPtr Fun,
-	const void *Cookie_const)
-{
-    ThreadPoolJob job;
-    struct Handle_Info *SInfo = NULL;
-    struct UpnpNonblockParam *Param;
-    char *ActionURL = (char *)ActionURL_const;
-    char *VarName = (char *)VarName_const;
-
-    memset(&job, 0, sizeof(job));
-
-    if( UpnpSdkInit != 1 ) {
-        return UPNP_E_FINISH;
-    }
-
-    UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-        "Inside UpnpGetServiceVarStatusAsync\n");
-
-    HandleReadLock();
-    switch( GetHandleInfo( Hnd, &SInfo ) ) {
-    case HND_CLIENT:
-        break;
-    default:
-        HandleUnlock();
-        return UPNP_E_INVALID_HANDLE;
-    }
-    HandleUnlock();
-
-    if( ActionURL == NULL ) {
-        return UPNP_E_INVALID_PARAM;
-    }
-    if( VarName == NULL || Fun == NULL )
-        return UPNP_E_INVALID_PARAM;
-
-    Param =
-        ( struct UpnpNonblockParam * )
-        malloc( sizeof( struct UpnpNonblockParam ) );
-    if( Param == NULL ) {
-        return UPNP_E_OUTOF_MEMORY;
-    }
-    memset( Param, 0, sizeof( struct UpnpNonblockParam ) ); 
-
-    Param->FunName = STATUS;
-    Param->Handle = Hnd;
-    strncpy( Param->Url, ActionURL, sizeof( Param->Url ) - 1);
-    strncpy( Param->VarName, VarName, sizeof( Param->VarName ) - 1 );
-    Param->Fun = Fun;
-    Param->Cookie = ( void * )Cookie_const;
-
-    TPJobInit( &job, ( start_routine ) UpnpThreadDistribution, Param );
-    TPJobSetFreeFunction( &job, ( free_routine ) free );
-
     TPJobSetPriority( &job, MED_PRIORITY );
 
     if (ThreadPoolAdd( &gSendThreadPool, &job, NULL ) != 0) {
@@ -1703,57 +1400,10 @@ int UpnpGetServiceVarStatusAsync(
     }
 
     UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-        "Exiting UpnpGetServiceVarStatusAsync\n");
-
+	    "Exiting UpnpSendActionAsync \n");
     return UPNP_E_SUCCESS;
 }
 
-
-int UpnpGetServiceVarStatus(
-	UpnpClient_Handle Hnd,
-	const char *ActionURL_const,
-	const char *VarName_const,
-	DOMString *StVar)
-{
-    struct Handle_Info *SInfo = NULL;
-    int retVal = 0;
-    char *StVarPtr;
-    char *ActionURL = (char *)ActionURL_const;
-    char *VarName = (char *)VarName_const;
-
-    if(UpnpSdkInit != 1) {
-        return UPNP_E_FINISH;
-    }
-
-    UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-        "Inside UpnpGetServiceVarStatus\n");
-
-    HandleReadLock();
-    switch( GetHandleInfo( Hnd, &SInfo ) ) {
-    case HND_CLIENT:
-        break;
-    default:
-        HandleUnlock();
-        return UPNP_E_INVALID_HANDLE;
-    }
-
-    HandleUnlock();
-
-    if( ActionURL == NULL ) {
-        return UPNP_E_INVALID_PARAM;
-    }
-    if( VarName == NULL || StVar == NULL ) {
-        return UPNP_E_INVALID_PARAM;
-    }
-
-    retVal = SoapGetServiceVarStatus( ActionURL, VarName, &StVarPtr );
-    *StVar = StVarPtr;
-
-    UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-        "Exiting UpnpGetServiceVarStatus \n");
-
-    return retVal;
-}
 #endif /* INCLUDE_CLIENT_APIS */
 #endif /* EXCLUDE_SOAP */
 
@@ -1763,7 +1413,6 @@ int UpnpGetServiceVarStatus(
  *                             Client API
  *
  ******************************************************************************/
-
 
 int UpnpOpenHttpPost(
 	const char *url,
@@ -1893,7 +1542,6 @@ int UpnpDownloadXmlDoc(const char *url, IXML_Document **xmlDoc)
 
 	ret_code = UpnpDownloadUrlItem(url, &xml_buf, content_type);
 	if (ret_code != UPNP_E_SUCCESS) {
-	    printf("Hello");
 		UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
 			"Error downloading document, retCode: %d\n", ret_code);
 		return ret_code;
@@ -2413,21 +2061,6 @@ void UpnpThreadDistribution(struct UpnpNonblockParam *Param)
 		Param->Fun(UPNP_CONTROL_ACTION_COMPLETE, &Evt, Param->Cookie);
 		ixmlDocument_free(Evt.ActionRequest);
 		ixmlDocument_free(Evt.ActionResult);
-		free(Param);
-		break;
-	}
-	case STATUS: {
-		struct Upnp_State_Var_Complete Evt;
-		memset(&Evt, 0, sizeof(Evt));
-		Evt.ErrCode = SoapGetServiceVarStatus(
-			Param->Url,
-			Param->VarName,
-			&Evt.CurrentVal);
-		strncpy(Evt.StateVarName, Param->VarName,
-			sizeof(Evt.StateVarName) - 1);
-		strncpy(Evt.CtrlUrl, Param->Url, sizeof(Evt.CtrlUrl) - 1);
-		Param->Fun(UPNP_CONTROL_GET_VAR_COMPLETE, &Evt, Param->Cookie);
-		free(Evt.CurrentVal);
 		free(Param);
 		break;
 	}

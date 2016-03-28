@@ -243,48 +243,6 @@ int CtrlPointRefresh(void)
 }
 
 /********************************************************************************
- * CtrlPointGetVar
- *
- * Description: 
- *       Send a GetVar request to the specified service of a device.
- *
- * Parameters:
- *   service -- The service
- *   devnum -- The number of the device (order in the list,
- *             starting with 1)
- *   varname -- The name of the variable to request.
- *
- ********************************************************************************/
-int CtrlPointGetVar(int service, int devnum, const char *varname)
-{
-	struct TvDeviceNode *devnode;
-	int rc;
-
-	ithread_mutex_lock(&DeviceListMutex);
-
-	rc = CtrlPointGetDevice(devnum, &devnode);
-
-	if (SUCCESS == rc) {
-		rc = UpnpGetServiceVarStatusAsync(
-			ctrlpt_handle,
-			devnode->device.TvService[service].ControlURL,
-			varname,
-			CtrlPointCallbackEventHandler,
-			NULL);
-		if (rc != UPNP_E_SUCCESS) {
-			SampleUtil_Print(
-				"Error in UpnpGetServiceVarStatusAsync -- %d\n",
-				rc);
-			rc = ERROR;
-		}
-	}
-
-	ithread_mutex_unlock(&DeviceListMutex);
-
-	return rc;
-}
-
-/********************************************************************************
  * CtrlPointSendAction
  *
  * Description: 
@@ -311,42 +269,28 @@ int CtrlPointSendAction(
 	struct TvDeviceNode *devnode;
 	IXML_Document *actionNode = NULL;
 	int rc = SUCCESS;
-	int param;
 
 	ithread_mutex_lock(&DeviceListMutex);
 
 	rc = CtrlPointGetDevice(devnum, &devnode);
 	if (SUCCESS == rc) {
-		if (0 == param_count) {
-			actionNode =
-			    UpnpMakeAction("PowerOn" /*actionname*/, TvServiceType[service],
-					   0, NULL);
-		} else {
-			for (param = 0; param < param_count; param++) {
-				if (UpnpAddToAction
-				    (&actionNode, actionname,
-				     TvServiceType[service], param_name[param],
-				     param_val[param]) != UPNP_E_SUCCESS) {
-					SampleUtil_Print
-					    ("ERROR: TvCtrlPointSendAction: Trying to add action param\n");
-					/*return -1; // TBD - BAD! leaves mutex locked */
-				}
-			}
-		}
+	    actionNode =
+		UpnpMakeAction("PowerOn" /*actionname*/, TvServiceType[service],
+			0, NULL);
 
-		printf("%s: ControlURL: %s\n",__func__,devnode->device.TvService[service].ControlURL);
+	    printf("%s: ControlURL: %s\n",__func__,devnode->device.TvService[service].ControlURL);
 
-		rc = UpnpSendActionAsync(ctrlpt_handle,
-					devnode->device.TvService[service].ControlURL,
-					actionname,NULL,
-					actionNode,
-					CtrlPointCallbackEventHandler, NULL);
+	    rc = UpnpSendActionAsync(ctrlpt_handle,
+		    devnode->device.TvService[service].ControlURL,
+		    actionname,NULL,
+		    actionNode,
+		    CtrlPointCallbackEventHandler, NULL);
 
-		if (rc != UPNP_E_SUCCESS) {
-			SampleUtil_Print("Error in UpnpSendActionAsync -- %d\n",
-					 rc);
-			rc = ERROR;
-		}
+	    if (rc != UPNP_E_SUCCESS) {
+		SampleUtil_Print("Error in UpnpSendActionAsync -- %d\n",
+			rc);
+		rc = ERROR;
+	    }
 	}
 
 	ithread_mutex_unlock(&DeviceListMutex);
@@ -355,31 +299,6 @@ int CtrlPointSendAction(
 		ixmlDocument_free(actionNode);
 
 	return rc;
-}
-
-/********************************************************************************
- * CtrlPointSendActionNumericArg
- *
- * Description:Send an action with one argument to a device in the global device list.
- *
- * Parameters:
- *   devnum -- The number of the device (order in the list, starting with 1)
- *   service -- TV_SERVICE_CONTROL or TV_SERVICE_PICTURE
- *   actionName -- The device action, i.e., "SetChannel"
- *   paramName -- The name of the parameter that is being passed
- *   paramValue -- Actual value of the parameter being passed
- *
- ********************************************************************************/
-int CtrlPointSendActionNumericArg(int devnum, int service,
-	const char *actionName, const char *paramName, int paramValue)
-{
-	char param_val_a[50];
-	char *param_val = param_val_a;
-
-	sprintf(param_val_a, "%d", paramValue);
-	return CtrlPointSendAction(
-		service, devnum, actionName, &paramName,
-		&param_val, 1);
 }
 
 int CtrlPointSendPowerOn(int devnum)
@@ -635,9 +554,13 @@ void CtrlPointAddDevice(
 
 	/* Read key elements from description document */
 	UDN = SampleUtil_GetFirstDocumentItem(DescDoc, "UDN");
+	printf("UDN: %s\n",UDN);
 	deviceType = SampleUtil_GetFirstDocumentItem(DescDoc, "deviceType");
+	printf("deviceType: %s\n",deviceType);
 	friendlyName = SampleUtil_GetFirstDocumentItem(DescDoc, "friendlyName");
+	printf("friendlyName: %s\n",friendlyName);
 	baseURL = SampleUtil_GetFirstDocumentItem(DescDoc, "URLBase");
+	printf("baseURL: %s\n",baseURL);
 
 	if (strcmp(deviceType, TvDeviceType) == 0) {
 		//SampleUtil_Print("Found Tv device\n");
