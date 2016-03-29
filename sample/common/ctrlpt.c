@@ -261,29 +261,20 @@ int CtrlPointRefresh(void)
 int CtrlPointSendAction(
 	int service,
 	int devnum,
-	const char *actionname,
-	const char **param_name,
-	char **param_val,
-	int param_count)
+	const char *actionname)
 {
 	struct TvDeviceNode *devnode;
-	IXML_Document *actionNode = NULL;
 	int rc = SUCCESS;
 
 	ithread_mutex_lock(&DeviceListMutex);
 
 	rc = CtrlPointGetDevice(devnum, &devnode);
 	if (SUCCESS == rc) {
-	    actionNode =
-		UpnpMakeAction("PowerOn" /*actionname*/, TvServiceType[service],
-			0, NULL);
-
 	    printf("%s: ControlURL: %s\n",__func__,devnode->device.TvService[service].ControlURL);
 
 	    rc = UpnpSendActionAsync(ctrlpt_handle,
 		    devnode->device.TvService[service].ControlURL,
 		    actionname,NULL,
-		    actionNode,
 		    CtrlPointCallbackEventHandler, NULL);
 
 	    if (rc != UPNP_E_SUCCESS) {
@@ -295,22 +286,19 @@ int CtrlPointSendAction(
 
 	ithread_mutex_unlock(&DeviceListMutex);
 
-	if (actionNode)
-		ixmlDocument_free(actionNode);
-
 	return rc;
 }
 
 int CtrlPointSendPowerOn(int devnum)
 {
 	return CtrlPointSendAction(
-		TV_SERVICE_CONTROL, devnum, "PowerOn", NULL, NULL, 0);
+		TV_SERVICE_CONTROL, devnum, "PowerOn");
 }
 
 int CtrlPointSendPowerOff(int devnum)
 {
 	return CtrlPointSendAction(
-		TV_SERVICE_CONTROL, devnum, "PowerOff", NULL, NULL, 0);
+		TV_SERVICE_CONTROL, devnum, "PowerOff");
 }
 
 int CtrlPointSendGetAPList(int devnum)
@@ -318,7 +306,7 @@ int CtrlPointSendGetAPList(int devnum)
     const char actionname[] =
 	"{\r\n\"command\":\r\n{\"commandName\":\"getAPList\",\"commandValue\":1,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{}\r\n}";
 	return CtrlPointSendAction(
-		TV_SERVICE_CONTROL, devnum, actionname, NULL, NULL, 0);
+		TV_SERVICE_CONTROL, devnum, actionname);
 }
 
 int CtrlPointSendConnectToAP(int devnum)
@@ -326,7 +314,7 @@ int CtrlPointSendConnectToAP(int devnum)
     const char actionname[] =
 	"{\r\n\"command\":\r\n{\"commandName\":\"connectToAP\",\"commandValue\":2,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"password\":\"8cmf-bl68-9tni\",\"SSID\":\"Tabahi\",\"security\":1,\"securityType\":\"WPA\"}\r\n}";
 	return CtrlPointSendAction(
-		TV_SERVICE_CONTROL, devnum, actionname, NULL, NULL, 0);
+		TV_SERVICE_CONTROL, devnum, actionname);
 }
 
 int CtrlPointSendCloseAP(int devnum)
@@ -334,7 +322,7 @@ int CtrlPointSendCloseAP(int devnum)
     const char actionname[] =
 	"{\r\n\"command\":\r\n{\"commandName\":\"closeAP\",\"commandValue\":3,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{}\r\n}";
 	return CtrlPointSendAction(
-		TV_SERVICE_CONTROL, devnum, actionname, NULL, NULL, 0);
+		TV_SERVICE_CONTROL, devnum, actionname);
 }
 
 int CtrlPointSendGetDevInfo(int devnum)
@@ -342,7 +330,7 @@ int CtrlPointSendGetDevInfo(int devnum)
     const char actionname[] =
 	"{\r\n\"command\":\r\n{\"commandName\":\"getProductInfo\",\"commandValue\":4,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{}\r\n}";
 	return CtrlPointSendAction(
-		TV_SERVICE_CONTROL, devnum, actionname, NULL, NULL, 0);
+		TV_SERVICE_CONTROL, devnum, actionname);
 }
 
 int CtrlPointSendSetName(int devnum)
@@ -350,7 +338,7 @@ int CtrlPointSendSetName(int devnum)
     const char actionname[] =
 	"{\r\n\"command\":\r\n{\"commandName\":\"setName\",\"commandValue\":5,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"name\":\"Bed Room\"}\r\n}";//,\"list\":[{\"name\":\"Amit\",\"age\":30},{\"name\":\"star\",\"age\":25},{\"name\":\"athu\",\"age\":19}]}\r\n}";
 	return CtrlPointSendAction(
-		TV_SERVICE_CONTROL, devnum, actionname, NULL, NULL, 0);
+		TV_SERVICE_CONTROL, devnum, actionname);
 }
 
 /********************************************************************************
@@ -554,13 +542,9 @@ void CtrlPointAddDevice(
 
 	/* Read key elements from description document */
 	UDN = SampleUtil_GetFirstDocumentItem(DescDoc, "UDN");
-	printf("UDN: %s\n",UDN);
 	deviceType = SampleUtil_GetFirstDocumentItem(DescDoc, "deviceType");
-	printf("deviceType: %s\n",deviceType);
 	friendlyName = SampleUtil_GetFirstDocumentItem(DescDoc, "friendlyName");
-	printf("friendlyName: %s\n",friendlyName);
 	baseURL = SampleUtil_GetFirstDocumentItem(DescDoc, "URLBase");
-	printf("baseURL: %s\n",baseURL);
 
 	if (strcmp(deviceType, TvDeviceType) == 0) {
 		//SampleUtil_Print("Found Tv device\n");
@@ -928,12 +912,7 @@ int CtrlPointCallbackEventHandler(Upnp_EventType EventType, void *Event, void *C
 	}
 	/* SOAP Stuff */
 	case UPNP_CONTROL_ACTION_COMPLETE: {
-		struct Upnp_Action_Complete *a_event = (struct Upnp_Action_Complete *)Event;
-
-		if (a_event->ErrCode != UPNP_E_SUCCESS) {
-			SampleUtil_Print("Error in  Action Complete Callback -- %d\n",
-					a_event->ErrCode);
-		}
+		SampleUtil_Print("UPNP_CONTROL_ACTION_COMPLETE\n");
 		/* No need for any processing here, just print out results.
 		 * Service state table updates are handled by events. */
 		break;
@@ -1293,7 +1272,6 @@ int CtrlPointProcessCommand(char *cmdline)
 	int numofcmds = (sizeof cmdloop_cmdlist) / sizeof (cmdloop_commands);
 	int cmdfound = 0;
 	int i;
-	int rc;
 	int invalidargs = 0;
 	int validargs;
 
@@ -1352,9 +1330,10 @@ int CtrlPointProcessCommand(char *cmdline)
 	case REFRESH:
 		CtrlPointRefresh();
 		break;
-	case EXITCMD:
-		rc = CtrlPointStop();
+	case EXITCMD: {
+		int rc = CtrlPointStop();
 		exit(rc);
+		}
 		break;
 	default:
 		SampleUtil_Print("Command not implemented; see 'Help'\n");

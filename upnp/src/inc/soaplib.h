@@ -72,56 +72,7 @@ void soap_device_callback(
  ****************************************************************************/
 int SoapSendAction(
 	IN char* action_url,
-	IN char *service_type,
-	IN IXML_Document *action_node,
-	OUT IXML_Document **response_node);
-
-/****************************************************************************
- * Function: SoapSendActionEx
- *
- * Parameters:
- *	IN char* action_url: device contrl URL
- *	IN char *service_type: device service type
- *	IN IXML_Document *Header: Soap header
- *	IN IXML_Document *action_node: SOAP action node (SOAP body)
- *	OUT IXML_Document **response_node: SOAP response node
- *
- * Description: This function is called by UPnP API to send the SOAP
- *	action request and waits till it gets the response from the device
- *	pass the response to the API layer. This action is similar to the
- *	the SoapSendAction with only difference that it allows users to
- *	pass the SOAP header along the SOAP body ( soap action request)
- *
- * Return: int
- *	returns UPNP_E_SUCCESS if successful else returns appropriate error
- * Note:
- ****************************************************************************/
-int SoapSendActionEx(
-	IN char * ActionURL,
-	IN char *ServiceType,
-	IN IXML_Document *Header,
-	IN IXML_Document *ActNode,
-	OUT IXML_Document **RespNode);
-
-/****************************************************************************
- * Function: SoapGetServiceVarStatus
- *
- * Parameters:
- *	IN  char * action_url: Address to send this variable query message.
- *	IN  char *var_name: Name of the variable.
- *	OUT char **var_value: Output value.
- *
- * Description: This function creates a status variable query message
- *	send it to the specified URL. It also collect the response.
- *
- * Return: int
- *
- * Note:
- ****************************************************************************/
-int SoapGetServiceVarStatus(
-	IN char * ActionURL,
-	IN DOMString VarName,
-	OUT DOMString *StVar);
+	IN char *service_type);
 
 extern const char* ContentTypeHeader;
 

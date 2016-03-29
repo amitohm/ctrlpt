@@ -730,23 +730,6 @@ static int FreeHandle(
 	return ret;
 }
 
-/*!
- * \brief Fills the sockadr_in with miniserver information.
- */
-static int GetDescDocumentAndURL(
-	/* [in] pointer to server address structure. */
-	Upnp_DescType descriptionType,
-	/* [in] . */
-	char *description,
-	/* [in] . */
-	int config_baseURL,
-	/* [in] . */
-	int AddressFamily,
-	/* [out] . */
-	IXML_Document **xmlDoc,
-	/* [out] . */
-	char descURL[LINE_SIZE]);
-
 #ifdef INCLUDE_CLIENT_APIS
 int UpnpRegisterClient(Upnp_FunPtr Fun, const void *Cookie,
 	UpnpClient_Handle *Hnd)
@@ -1317,15 +1300,12 @@ int UpnpSendActionAsync(
 	const char *ActionURL_const,
 	const char *ServiceType_const,
 	const char *DevUDN_const,
-	IXML_Document *Act,
 	Upnp_FunPtr Fun,
 	const void *Cookie_const)
 {
-    int rc;
     ThreadPoolJob job;
     struct Handle_Info *SInfo = NULL;
     struct UpnpNonblockParam *Param;
-    DOMString tmpStr;
     char *ActionURL = (char *)ActionURL_const;
     char *ServiceType = (char *)ServiceType_const;
     /* udn not used? */
@@ -1353,20 +1333,14 @@ int UpnpSendActionAsync(
 	return UPNP_E_INVALID_PARAM;
     }
     if( ServiceType == NULL ||
-	    Act == NULL || Fun == NULL || DevUDN_const != NULL ) {
+	    Fun == NULL || DevUDN_const != NULL ) {
 	return UPNP_E_INVALID_PARAM;
-    }
-    tmpStr = ixmlPrintNode( ( IXML_Node * ) Act );
-    if( tmpStr == NULL ) {
-	return UPNP_E_INVALID_ACTION;
     }
 
     Param =
 	( struct UpnpNonblockParam * )
 	malloc( sizeof( struct UpnpNonblockParam ) );
-
     if( Param == NULL ) {
-	ixmlFreeDOMString( tmpStr );
 	return UPNP_E_OUTOF_MEMORY;
     }
     memset( Param, 0, sizeof( struct UpnpNonblockParam ) );
@@ -1377,17 +1351,6 @@ int UpnpSendActionAsync(
     strncpy( Param->ServiceType, ServiceType,
 	    sizeof ( Param->ServiceType ) - 1 );
 
-    rc = ixmlParseBufferEx( tmpStr, &( Param->Act ) );
-    if( rc != IXML_SUCCESS ) {
-	free( Param );
-	ixmlFreeDOMString( tmpStr );
-	if( rc == IXML_INSUFFICIENT_MEMORY ) {
-	    return UPNP_E_OUTOF_MEMORY;
-	} else {
-	    return UPNP_E_INVALID_ACTION;
-	}
-    }
-    ixmlFreeDOMString( tmpStr );
     Param->Cookie = ( void * )Cookie_const;
     Param->Fun = Fun;
 
@@ -2049,18 +2012,10 @@ void UpnpThreadDistribution(struct UpnpNonblockParam *Param)
 #endif /* EXCLUDE_GENA == 0 */
 #if EXCLUDE_SOAP == 0
 	case ACTION: {
-		struct Upnp_Action_Complete Evt;
-		memset(&Evt, 0, sizeof(Evt));
-		Evt.ActionResult = NULL;
-		Evt.ErrCode = SoapSendAction(
+		SoapSendAction(
 			Param->Url,
-			Param->ServiceType,
-			Param->Act, &Evt.ActionResult);
-		Evt.ActionRequest = Param->Act;
-		strncpy(Evt.CtrlUrl, Param->Url, sizeof(Evt.CtrlUrl) - 1);
-		Param->Fun(UPNP_CONTROL_ACTION_COMPLETE, &Evt, Param->Cookie);
-		ixmlDocument_free(Evt.ActionRequest);
-		ixmlDocument_free(Evt.ActionResult);
+			Param->ServiceType);
+		Param->Fun(UPNP_CONTROL_ACTION_COMPLETE, NULL, Param->Cookie);
 		free(Param);
 		break;
 	}

@@ -1693,8 +1693,6 @@ EXPORT_SPEC int UpnpSendActionAsync(
 	const char *ServiceType,
 	/*! [in] This parameter is ignored and must be \c NULL. */
 	const char *DevUDN,
-	/*! [in] The DOM document for the action to perform on this device. */
-	IXML_Document *Action,
 	/*! [in] Pointer to a callback function to be invoked when the operation
 	 * completes. */
 	Upnp_FunPtr Fun,

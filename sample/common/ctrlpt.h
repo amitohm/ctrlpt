@@ -113,7 +113,7 @@ int	CtrlPointRemoveDevice(const char *);
 int	CtrlPointRemoveAll(void);
 int	CtrlPointRefresh(void);
 
-int	CtrlPointSendAction(int, int, const char *, const char **, char **, int);
+int	CtrlPointSendAction(int, int, const char *);
 int	CtrlPointSendActionNumericArg(int devnum, int service, const char *actionName, const char *paramName, int paramValue);
 int	CtrlPointSendPowerOn(int devnum);
 int	CtrlPointSendPowerOff(int devnum);
