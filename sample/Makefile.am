@@ -6,13 +6,11 @@
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/upnp/inc \
-	-I$(top_srcdir)/threadutil/inc \
-	-I$(top_srcdir)/ixml/inc
+	-I$(top_srcdir)/threadutil/inc
 
 LDADD = \
 	$(top_builddir)/upnp/libupnp.la \
-	$(top_builddir)/threadutil/libthreadutil.la \
-	$(top_builddir)/ixml/libixml.la
+	$(top_builddir)/threadutil/libthreadutil.la
 
 # samples
 noinst_PROGRAMS =

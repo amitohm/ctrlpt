@@ -56,6 +56,7 @@ UpnpClient_Handle ctrlpt_handle = -1;
 
 /*! Device type for tv device. */
 const char TvDeviceType[] = "urn:upnp:device:ohm:1";
+const char TvUDN[] = "uuid:Upnp-OhmSwitch-1_0-1234";
 
 /*! Service names.*/
 const char *TvServiceName[] = { "Control" };
@@ -382,43 +383,39 @@ int CtrlPointPrintList()
  *       add it.  Otherwise, update its advertisement expiration timeout.
  *
  * Parameters:
- *   DescDoc -- The description document for the device
  *   location -- The location of the description document URL
  *   expires -- The expiration time for this advertisement
  *
  ********************************************************************************/
 void CtrlPointAddDevice(
-	IXML_Document *DescDoc,
 	const char *location,
 	int expires)
 {
 	char *deviceType = NULL;
-	char *friendlyName = NULL;
-	char *baseURL = NULL;
 	char *UDN = NULL;
-	char *serviceId[TV_SERVICE_SERVCOUNT] = { NULL };
-	char *eventURL[TV_SERVICE_SERVCOUNT] = { NULL };
-	char *controlURL[TV_SERVICE_SERVCOUNT] = { NULL };
-	Upnp_SID eventSID[TV_SERVICE_SERVCOUNT];
-	int TimeOut[TV_SERVICE_SERVCOUNT] = {
-		default_timeout
-	};
 	struct TvDeviceNode *deviceNode;
 	struct TvDeviceNode *tmpdevnode;
-	int ret = 1;
 	int found = 0;
-	int service;
 
 	ithread_mutex_lock(&DeviceListMutex);
 
 	/* Read key elements from description document */
-	UDN = SampleUtil_GetFirstDocumentItem(DescDoc, "UDN");
-	deviceType = SampleUtil_GetFirstDocumentItem(DescDoc, "deviceType");
-	friendlyName = SampleUtil_GetFirstDocumentItem(DescDoc, "friendlyName");
-	baseURL = SampleUtil_GetFirstDocumentItem(DescDoc, "URLBase");
+	UDN = (char *)malloc(sizeof(char)*(strlen(TvUDN)+1));
+	if (NULL==UDN)
+	    return;
+
+	strncpy(UDN, TvUDN, strlen(TvUDN));
+	UDN[strlen(TvUDN)] = '\0';
+
+	deviceType = (char *)malloc(sizeof(char)*(strlen(TvDeviceType)+1));
+	if (NULL==deviceType)
+	    return;
+
+	strncpy(deviceType, TvDeviceType, strlen(TvDeviceType));
+	deviceType[strlen(TvDeviceType)] = '\0';
 
 	if (strcmp(deviceType, TvDeviceType) == 0) {
-		//SampleUtil_Print("Found Tv device\n");
+		SampleUtil_Print("Found Ohm device\n");
 
 		/* Check if this device is already in the list */
 		tmpdevnode = GlobalDeviceList;
@@ -435,43 +432,12 @@ void CtrlPointAddDevice(
 			/* the advertisement timeout field */
 			tmpdevnode->device.AdvrTimeOut = expires;
 		} else {
-			for (service = 0; service < TV_SERVICE_SERVCOUNT;
-			     service++) {
-				if (SampleUtil_FindAndParseService
-				    (DescDoc, location, TvServiceType[service],
-				     &serviceId[service], &eventURL[service],
-				     &controlURL[service])) {
-					SampleUtil_Print
-					    ("Subscribing to EventURL %s...\n",
-					     eventURL[service]);
-					ret =
-					    UpnpSubscribe(ctrlpt_handle,
-							  eventURL[service],
-							  &TimeOut[service],
-							  eventSID[service]);
-					if (ret == UPNP_E_SUCCESS) {
-						SampleUtil_Print
-						    ("Subscribed to EventURL with SID=%s\n",
-						     eventSID[service]);
-					} else {
-						SampleUtil_Print
-						    ("Error Subscribing to EventURL -- %d\n",
-						     ret);
-						strcpy(eventSID[service], "");
-					}
-				} else {
-					SampleUtil_Print
-					    ("Error: Could not find Service: %s\n",
-					     TvServiceType[service]);
-				}
-			}
 			/* Create a new device node */
 			deviceNode =
 			    (struct TvDeviceNode *)
 			    malloc(sizeof(struct TvDeviceNode));
 			strcpy(deviceNode->device.UDN, UDN);
 			strcpy(deviceNode->device.DescDocURL, location);
-			strcpy(deviceNode->device.FriendlyName, friendlyName);
 			deviceNode->device.AdvrTimeOut = expires;
 			deviceNode->next = NULL;
 			/* Insert the new device node in the list */
@@ -498,70 +464,8 @@ void CtrlPointAddDevice(
 
 	if (deviceType)
 		free(deviceType);
-	if (friendlyName)
-		free(friendlyName);
 	if (UDN)
 		free(UDN);
-	if (baseURL)
-		free(baseURL);
-}
-
-void StateUpdate(char *UDN, int Service, IXML_Document *ChangedVariables,
-		   char **State)
-{
-	IXML_NodeList *properties;
-	IXML_NodeList *variables;
-	IXML_Element *property;
-	IXML_Element *variable;
-	long unsigned int length;
-	long unsigned int length1;
-	long unsigned int i;
-	int j;
-	char *tmpstate = NULL;
-
-	SampleUtil_Print("Tv State Update (service %d):\n", Service);
-	/* Find all of the e:property tags in the document */
-	properties = ixmlDocument_getElementsByTagName(ChangedVariables,
-		"e:property");
-	if (properties) {
-		length = ixmlNodeList_length(properties);
-		for (i = 0; i < length; i++) {
-			/* Loop through each property change found */
-			property = (IXML_Element *)ixmlNodeList_item(
-				properties, i);
-			/* For each variable name in the state table,
-			 * check if this is a corresponding property change */
-			for (j = 0; j < TvVarCount[Service]; j++) {
-				variables = ixmlElement_getElementsByTagName(
-					property, TvVarName[Service][j]);
-				/* If a match is found, extract 
-				 * the value, and update the state table */
-				if (variables) {
-					length1 = ixmlNodeList_length(variables);
-					if (length1) {
-						variable = (IXML_Element *)
-							ixmlNodeList_item(variables, 0);
-						tmpstate =
-						    SampleUtil_GetElementValue(variable);
-						if (tmpstate) {
-							strcpy(State[j], tmpstate);
-							SampleUtil_Print(
-								" Variable Name: %s New Value:'%s'\n",
-								TvVarName[Service][j], State[j]);
-						}
-						if (tmpstate)
-							free(tmpstate);
-						tmpstate = NULL;
-					}
-					ixmlNodeList_free(variables);
-					variables = NULL;
-				}
-			}
-		}
-		ixmlNodeList_free(properties);
-	}
-	return;
-	UDN = UDN;
 }
 
 /********************************************************************************
@@ -582,30 +486,17 @@ int CtrlPointCallbackEventHandler(Upnp_EventType EventType, void *Event, void *C
 {
 	/*int errCode = 0;*/
 
-	//SampleUtil_PrintEvent(EventType, Event);
 	switch ( EventType ) {
 	/* SSDP Stuff */
 	case UPNP_DISCOVERY_ADVERTISEMENT_ALIVE:
 	case UPNP_DISCOVERY_SEARCH_RESULT: {
 		struct Upnp_Discovery *d_event = (struct Upnp_Discovery *)Event;
-		IXML_Document *DescDoc = NULL;
-		int ret;
 
 		if (d_event->ErrCode != UPNP_E_SUCCESS) {
 			SampleUtil_Print("Error in Discovery Callback -- %d\n",
 				d_event->ErrCode);
 		}
-		ret = UpnpDownloadXmlDoc(d_event->Location, &DescDoc);
-		if (ret != UPNP_E_SUCCESS) {
-			SampleUtil_Print("Error obtaining device description from %s -- error = %d\n",
-				d_event->Location, ret);
-		} else {
-			CtrlPointAddDevice(
-				DescDoc, d_event->Location, d_event->Expires);
-		}
-		if (DescDoc) {
-			ixmlDocument_free(DescDoc);
-		}
+		CtrlPointAddDevice(d_event->Location, d_event->Expires);
 		//CtrlPointPrintList();
 		break;
 	}

@@ -142,7 +142,6 @@ extern ithread_mutex_t GlobalClientSubscribeMutex;
  */
 typedef struct NOTIFY_THREAD_STRUCT {
 	char *headers;
-	DOMString propertySet;
 	char *servId;
 	char *UDN;
 	Upnp_SID sid;

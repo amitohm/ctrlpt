@@ -698,7 +698,6 @@ echo "--------------------------------------------------------------------------
 
 AC_CONFIG_FILES([
 	Makefile
-	ixml/Makefile
 	threadutil/Makefile
 	upnp/Makefile
 	sample/Makefile

@@ -200,8 +200,6 @@ struct  UpnpNonblockParam
 	Upnp_SID SubsId;
 	char *Cookie;
 	Upnp_FunPtr Fun;
-	IXML_Document *Header;
-	IXML_Document *Act;
 	struct DevDesc *Devdesc;
 };
 

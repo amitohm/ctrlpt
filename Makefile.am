@@ -9,7 +9,6 @@ ACLOCAL_AMFLAGS = -I m4
 DISTCHECK_CONFIGURE_FLAGS = --enable-debug --enable-samples
 
 SUBDIRS = \
-	ixml \
 	threadutil \
 	upnp \
 	sample
@@ -29,14 +28,12 @@ EXTRA_DIST = \
 	build/inc/upnpconfig.h \
 	build/msvc/inttypes.h \
 	build/msvc/stdint.h \
-	build/vc8/ixml.vcproj \
 	build/vc8/libupnp.sln \
 	build/vc8/libupnp.vcproj \
 	build/vc8/threadutil.vcproj \
 	build/vc8/tvcombo.vcproj \
 	build/vc8/tvctrlpt.vcproj \
 	build/vc8/tvdevice.vcproj \
-	build/vc9/ixml.vcproj \
 	build/vc9/libupnp.sln \
 	build/vc9/libupnp.vcproj \
 	build/vc9/threadutil.vcproj \

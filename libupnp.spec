@@ -48,7 +48,7 @@ make install DESTDIR=$RPM_BUILD_ROOT
 %{__mv} %{buildroot}%{docdir}/html \
 	%{buildroot}%{docdeveldir}/
 
-%{__rm} %{buildroot}%{_libdir}/{libixml.la,libthreadutil.la,libupnp.la}
+%{__rm} %{buildroot}%{_libdir}/{libthreadutil.la,libupnp.la}
 
 %post -p /sbin/ldconfig
 
@@ -57,7 +57,6 @@ make install DESTDIR=$RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %doc %{docdir}
-%{_libdir}/libixml.so.*
 %{_libdir}/libthreadutil.so.*
 %{_libdir}/libupnp.so.*
 
@@ -65,10 +64,8 @@ make install DESTDIR=$RPM_BUILD_ROOT
 %defattr(0644,root,root,0755)
 %doc %{docdeveldir}
 %{_includedir}/upnp/
-%{_libdir}/libixml.so
 %{_libdir}/libthreadutil.so
 %{_libdir}/libupnp.so
-%{_libdir}/libixml.a
 %{_libdir}/libthreadutil.a
 %{_libdir}/libupnp.a
 %{_libdir}/pkgconfig/libupnp.pc

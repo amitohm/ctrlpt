@@ -704,7 +704,6 @@ void gena_process_notification_event(
 	http_message_t *event)
 {
 	struct Upnp_Event event_struct;
-	IXML_Document *ChangedVars = NULL;
 	int eventKey;
 	token sid;
 	ClientSubscription *subscription = NULL;
@@ -745,14 +744,6 @@ void gena_process_notification_event(
 	if (memptr_cmp(&nt_hdr, "upnp:event") != 0 ||
 	    memptr_cmp(&nts_hdr, "upnp:propchange") != 0) {
 		error_respond(info, HTTP_PRECONDITION_FAILED, event);
-		goto exit_function;
-	}
-
-	/* parse the content (should be XML) */
-	if (!has_xml_content_type(event) ||
-	    event->msg.length == 0 ||
-	    ixmlParseBufferEx(event->entity.buf, &ChangedVars) != IXML_SUCCESS) {
-		error_respond(info, HTTP_BAD_REQUEST, event);
 		goto exit_function;
 	}
 
@@ -814,7 +805,6 @@ void gena_process_notification_event(
 	strncpy(event_struct.Sid, UpnpString_get_String(tmpSID),
 		sizeof(event_struct.Sid) - 1);
 	event_struct.EventKey = eventKey;
-	event_struct.ChangedVariables = ChangedVars;
 
 	/* copy callback */
 	callback = handle_info->Callback;
@@ -827,9 +817,8 @@ void gena_process_notification_event(
 	/* that the handle is not unregistered in the middle of a */
 	/* callback */
 	callback(UPNP_EVENT_RECEIVED, &event_struct, cookie);
-
 exit_function:
-	ixmlDocument_free(ChangedVars);
+	return;
 }
 
 

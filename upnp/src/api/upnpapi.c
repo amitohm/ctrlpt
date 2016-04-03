@@ -1492,68 +1492,6 @@ int UpnpDownloadUrlItem(const char *url, char **outBuf, char *contentType)
 	return ret_code;
 }
 
-
-int UpnpDownloadXmlDoc(const char *url, IXML_Document **xmlDoc)
-{
-	int ret_code;
-	char *xml_buf;
-	char content_type[LINE_SIZE];
-
-	if (url == NULL || xmlDoc == NULL) {
-		return UPNP_E_INVALID_PARAM;
-	}
-
-	ret_code = UpnpDownloadUrlItem(url, &xml_buf, content_type);
-	if (ret_code != UPNP_E_SUCCESS) {
-		UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-			"Error downloading document, retCode: %d\n", ret_code);
-		return ret_code;
-	}
-
-	if (strncasecmp(content_type, "text/xml", strlen("text/xml"))) {
-		UpnpPrintf(UPNP_INFO, API, __FILE__, __LINE__, "Not text/xml\n");
-		/* Linksys WRT54G router returns
-		 * "CONTENT-TYPE: application/octet-stream".
-		 * Let's be nice to Linksys and try to parse document anyway.
-		 * If the data sended is not a xml file, ixmlParseBufferEx
-		 * will fail and the function will return UPNP_E_INVALID_DESC too. */
-#if 0
-		free(xml_buf);
-		return UPNP_E_INVALID_DESC;
-#endif
-	}
-
-	ret_code = ixmlParseBufferEx(xml_buf, xmlDoc);
-	free(xml_buf);
-	if (ret_code != IXML_SUCCESS) {
-		if (ret_code == IXML_INSUFFICIENT_MEMORY) {
-			UpnpPrintf(UPNP_CRITICAL, API, __FILE__, __LINE__,
-				"Out of memory, ixml error code: %d\n",
-				ret_code);
-			return UPNP_E_OUTOF_MEMORY;
-		} else {
-			UpnpPrintf(UPNP_CRITICAL, API, __FILE__, __LINE__,
-				"Invalid Description, ixml error code: %d\n",
-				ret_code);
-			return UPNP_E_INVALID_DESC;
-		}
-	} else {
-#if 1
-		xml_buf = ixmlPrintNode((IXML_Node *)*xmlDoc);
-		UpnpPrintf( UPNP_ALL, API, __FILE__, __LINE__,
-			"Printing the Parsed xml document \n %s\n", xml_buf);
-		UpnpPrintf( UPNP_ALL, API, __FILE__, __LINE__,
-			"****************** END OF Parsed XML Doc *****************\n");
-		ixmlFreeDOMString(xml_buf);
-#endif
-		UpnpPrintf( UPNP_ALL, API, __FILE__, __LINE__,
-			"Exiting UpnpDownloadXmlDoc\n");
-
-		return UPNP_E_SUCCESS;
-	}
-}
-
-
 int UpnpGetIfInfo(const char *IfName)
 {
 #ifdef WIN32

@@ -500,7 +500,7 @@ static size_t parse_scheme(
 }
 
 
-int remove_escaped_chars(INOUT char *in, INOUT size_t *size)
+int remove_escaped_chars(char *in, size_t *size)
 {
 	size_t i = (size_t)0;
 

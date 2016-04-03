@@ -8,14 +8,11 @@ SUBDIRS = .
 
 AM_CPPFLAGS = \
 	-I$(srcdir)/inc \
-	-I$(top_srcdir)/threadutil/inc \
-	-I$(top_srcdir)/ixml/inc
+	-I$(top_srcdir)/threadutil/inc
 
 LDADD = \
 	libupnp.la \
-	$(top_builddir)/threadutil/libthreadutil.la \
-	$(top_builddir)/ixml/libixml.la
-
+	$(top_builddir)/threadutil/libthreadutil.la
 
 upnpincludedir = $(includedir)/upnp
 upnpinclude_HEADERS = \
@@ -41,8 +38,7 @@ libupnp_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(srcdir)/src/inc
 libupnp_la_LDFLAGS = \
 	-version-info $(LT_VERSION_UPNP) \
 	-export-symbols-regex '^Upnp.*' \
-	$(top_builddir)/threadutil/libthreadutil.la \
-	$(top_builddir)/ixml/libixml.la
+	$(top_builddir)/threadutil/libthreadutil.la
 
 libupnp_la_SOURCES = \
 	src/inc/config.h \

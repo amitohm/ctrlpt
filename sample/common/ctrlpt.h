@@ -116,33 +116,13 @@ int	CtrlPointSendAction(int, int, const char *);
 int	CtrlPointSendActionNumericArg(int devnum, int service, const char *actionName, const char *paramName, int paramValue);
 int	CtrlPointSendPowerOn(int devnum);
 int	CtrlPointSendPowerOff(int devnum);
-int	CtrlPointSendSetChannel(int, int);
 int 	CtrlPointSendGetAPList(int devnum);
 
 int	CtrlPointGetDevice(int, struct TvDeviceNode **);
 int	CtrlPointPrintList(void);
 int	CtrlPointPrintDevice(int);
-void	CtrlPointAddDevice(IXML_Document *, const char *, int); 
-void    CtrlPointHandleGetVar(const char *, const char *, const DOMString);
+void	CtrlPointAddDevice(const char *, int); 
 
-/*!
- * \brief Update a Tv state table. Called when an event is received.
- *
- * Note: this function is NOT thread save. It must be called from another
- * function that has locked the global device list.
- **/
-void TvStateUpdate(
-	/*! [in] The UDN of the parent device. */
-	char *UDN,
-	/*! [in] The service state table to update. */
-	int Service,
-	/*! [out] DOM document representing the XML received with the event. */
-	IXML_Document *ChangedVariables,
-	/*! [out] pointer to the state table for the Tv  service to update. */
-	char **State);
-
-void	CtrlPointHandleEvent(const char *, int, IXML_Document *); 
-void	CtrlPointHandleSubscribeUpdate(const char *, const Upnp_SID, int); 
 int	CtrlPointCallbackEventHandler(Upnp_EventType, void *, void *);
 
 /*!

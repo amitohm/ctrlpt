@@ -87,17 +87,6 @@ struct document_type_t {
 	const char *content_subtype;
 };
 
-struct xml_alias_t {
-	/*! name of DOC from root; e.g.: /foo/bar/mydesc.xml */
-	membuffer name;
-	/*! the XML document contents */
-	membuffer doc;
-	/*! . */
-	time_t last_modified;
-	/*! . */
-	int *ct;
-};
-
 static const char *gMediaTypes[] = {
 	/*! 0. */
 	NULL,
@@ -228,8 +217,6 @@ static struct document_type_t gMediaTypeList[NUM_MEDIA_TYPES];
 /*! Global variable. A local dir which serves as webserver root. */
 membuffer gDocumentRootDir;
 
-/*! XML document. */
-static struct xml_alias_t gAliasDoc;
 static ithread_mutex_t gWebMutex;
 extern str_int_entry Http_Header_Names[NUM_HTTP_HEADER_NAMES];
 
@@ -299,168 +286,6 @@ static UPNP_INLINE int search_extension(
 	return -1;
 }
 
-/*!
- * \brief Based on the extension, clones an XML string based on type and
- * content subtype. If content type and sub type are not found, unknown
- * types are used.
- *
- * \return
- * \li \c 0 on success.
- * \li \c UPNP_E_OUTOF_MEMORY - on memory allocation failures.
- */
-static UPNP_INLINE int get_content_type(
-	/*! [in] . */
-	const char *filename,
-	/*! [out] . */
-	DOMString *content_type)
-{
-	const char *extension;
-	const char *type;
-	const char *subtype;
-	int ctype_found = FALSE;
-	char *temp = NULL;
-	size_t length = 0;
-	int rc = 0;
-
-	(*content_type) = NULL;
-	/* get ext */
-	extension = strrchr(filename, '.');
-	if (extension != NULL)
-		if (search_extension(extension + 1, &type, &subtype) == 0)
-			ctype_found = TRUE;
-	if (!ctype_found) {
-		/* unknown content type */
-		type = gMediaTypes[APPLICATION_INDEX];
-		subtype = "octet-stream";
-	}
-	length = strlen(type) + strlen("/") + strlen(subtype) + 1;
-	temp = malloc(length);
-	if (!temp)
-		return UPNP_E_OUTOF_MEMORY;
-	rc = snprintf(temp, length, "%s/%s", type, subtype);
-	if (rc < 0 || (unsigned int) rc >= length) {
-		free(temp);
-		return UPNP_E_OUTOF_MEMORY;
-	}
-	(*content_type) = ixmlCloneDOMString(temp);
-	free(temp);
-	if (!(*content_type))
-		return UPNP_E_OUTOF_MEMORY;
-
-	return 0;
-}
-
-/*!
- * \brief Initialize the global XML document. Allocate buffers for the XML
- * document.
- */
-static UPNP_INLINE void glob_alias_init(void)
-{
-	struct xml_alias_t *alias = &gAliasDoc;
-
-	membuffer_init(&alias->doc);
-	membuffer_init(&alias->name);
-	alias->ct = NULL;
-	alias->last_modified = 0;
-}
-
-/*!
- * \brief Check for the validity of the XML object buffer.
- *
- * \return BOOLEAN.
- */
-static UPNP_INLINE int is_valid_alias(
-	/*! [in] XML alias object. */
-	const struct xml_alias_t *alias)
-{
-	return alias->doc.buf != NULL;
-}
-
-/*!
- * \brief Copy the contents of the global XML document into the local output
- * parameter.
- */
-static void alias_grab(
-	/*! [out] XML alias object. */
-	struct xml_alias_t *alias)
-{
-	ithread_mutex_lock(&gWebMutex);
-	assert(is_valid_alias(&gAliasDoc));
-	memcpy(alias, &gAliasDoc, sizeof(struct xml_alias_t));
-	*alias->ct = *alias->ct + 1;
-	ithread_mutex_unlock(&gWebMutex);
-}
-
-/*!
- * \brief Release the XML document referred to by the input parameter. Free
- * the allocated buffers associated with this object.
- */
-static void alias_release(
-	/*! [in] XML alias object. */
-	struct xml_alias_t *alias)
-{
-	ithread_mutex_lock(&gWebMutex);
-	/* ignore invalid alias */
-	if (!is_valid_alias(alias)) {
-		ithread_mutex_unlock(&gWebMutex);
-		return;
-	}
-	assert(*alias->ct > 0);
-	*alias->ct -= 1;
-	if (*alias->ct <= 0) {
-		membuffer_destroy(&alias->doc);
-		membuffer_destroy(&alias->name);
-		free(alias->ct);
-	}
-	ithread_mutex_unlock(&gWebMutex);
-}
-
-int web_server_set_alias(const char *alias_name, 
-	const char *alias_content, size_t alias_content_length,
-	time_t last_modified)
-{
-	int ret_code;
-	struct xml_alias_t alias;
-
-	alias_release(&gAliasDoc);
-	if (alias_name == NULL) {
-		/* don't serve aliased doc anymore */
-		return 0;
-	}
-	assert(alias_content != NULL);
-	membuffer_init(&alias.doc);
-	membuffer_init(&alias.name);
-	alias.ct = NULL;
-	do {
-		/* insert leading /, if missing */
-		if (*alias_name != '/')
-			if (membuffer_assign_str(&alias.name, "/") != 0)
-				break;	/* error; out of mem */
-		ret_code = membuffer_append_str(&alias.name, alias_name);
-		if (ret_code != 0)
-			break;	/* error */
-		if ((alias.ct = (int *)malloc(sizeof(int))) == NULL)
-			break;	/* error */
-		*alias.ct = 1;
-		membuffer_attach(&alias.doc, (char *)alias_content,
-				 alias_content_length);
-		alias.last_modified = last_modified;
-		/* save in module var */
-		ithread_mutex_lock(&gWebMutex);
-		gAliasDoc = alias;
-		ithread_mutex_unlock(&gWebMutex);
-
-		return 0;
-	} while (FALSE);
-	/* error handler */
-	/* free temp alias */
-	membuffer_destroy(&alias.name);
-	membuffer_destroy(&alias.doc);
-	free(alias.ct);
-
-	return UPNP_E_OUTOF_MEMORY;
-}
-
 int web_server_init()
 {
 	int ret = 0;
@@ -469,7 +294,6 @@ int web_server_init()
 		/* decode media list */
 		media_list_init();
 		membuffer_init(&gDocumentRootDir);
-		glob_alias_init();
 		pVirtualDirList = NULL;
 
 		/* Initialize callbacks */
@@ -493,10 +317,8 @@ void web_server_destroy(void)
 {
 	if (bWebServerState == WEB_SERVER_ENABLED) {
 		membuffer_destroy(&gDocumentRootDir);
-		alias_release(&gAliasDoc);
 
 		ithread_mutex_lock(&gWebMutex);
-		memset(&gAliasDoc, 0, sizeof(struct xml_alias_t));
 		ithread_mutex_unlock(&gWebMutex);
 
 		ithread_mutex_destroy(&gWebMutex);
@@ -526,8 +348,6 @@ static int get_file_info(
 	struct tm date;
 	char buffer[ASCTIME_R_BUFFER_SIZE];
 
-	ixmlFreeDOMString(info->content_type);	
-	info->content_type = NULL;
 	code = stat(filename, &s);
 	if (code == -1)
 		return -1;
@@ -544,7 +364,6 @@ static int get_file_info(
 		fclose(fp);
 	info->file_length = s.st_size;
 	info->last_modified = s.st_mtime;
-	rc = get_content_type(filename, &info->content_type);
 	UpnpPrintf(UPNP_INFO, HTTP, __FILE__, __LINE__,
 		"file info: %s, length: %lld, last_mod=%s readable=%d\n",
 		filename, (long long)info->file_length,
@@ -570,35 +389,6 @@ int web_server_set_root_dir(const char *root_dir)
 	}
 
 	return 0;
-}
-
-/*!
- * \brief Compare the files names between the one on the XML alias the one
- * passed in as the input parameter. If equal extract file information.
- *
- * \return
- * \li \c TRUE - On Success
- * \li \c FALSE if request is not an alias
- */
-static UPNP_INLINE int get_alias(
-	/*! [in] request file passed in to be compared with. */
-	const char *request_file,
-	/*! [out] xml alias object which has a file name stored. */
-	struct xml_alias_t *alias,
-	/*! [out] File information object which will be filled up if the file
-	 * comparison succeeds. */
-	struct File_Info *info)
-{
-	int cmp = strcmp(alias->name.buf, request_file);
-	if (cmp == 0) {
-		/* fill up info */
-		info->file_length = (off_t)alias->doc.length;
-		info->is_readable = TRUE;
-		info->is_directory = FALSE;
-		info->last_modified = alias->last_modified;
-	}
-
-	return cmp == 0;
 }
 
 /*!
@@ -1030,8 +820,6 @@ static int process_request(
 	membuffer *headers,
 	/*! [out] Get filename from request document. */
 	membuffer *filename,
-	/*! [out] Xml alias document from the request document. */
-	struct xml_alias_t *alias,
 	/*! [out] Send Instruction object where the response is set up. */
 	struct SendInstruction *RespInstr)
 {
@@ -1040,13 +828,11 @@ static int process_request(
 
 	char *request_doc;
 	struct File_Info finfo;
-	int using_alias;
 	int using_virtual_dir;
 	uri_type *url;
 	const char *temp_str;
 	int resp_major;
 	int resp_minor;
-	int alias_grabbed;
 	size_t dummy;
 	const char *extra_headers = NULL;
 
@@ -1060,7 +846,6 @@ static int process_request(
 	memset(&finfo, 0, sizeof(finfo));
 	request_doc = NULL;
 	finfo.content_type = NULL;
-	alias_grabbed = FALSE;
 	err_code = HTTP_INTERNAL_SERVER_ERROR;	/* default error */
 	using_virtual_dir = FALSE;
 	using_alias = FALSE;
@@ -1093,21 +878,6 @@ static int process_request(
 		RespInstr->IsVirtualFile = 1;
 		if (membuffer_assign_str(filename, request_doc) != 0) {
 			goto error_handler;
-		}
-	} else {
-		/* try using alias */
-		if (is_valid_alias(&gAliasDoc)) {
-			alias_grab(alias);
-			alias_grabbed = TRUE;
-			using_alias = get_alias(request_doc, alias, &finfo);
-			if (using_alias == TRUE) {
-				finfo.content_type =
-				    ixmlCloneDOMString("text/xml");
-
-				if (finfo.content_type == NULL) {
-					goto error_handler;
-				}
-			}
 		}
 	}
 	if (using_virtual_dir) {
@@ -1239,9 +1009,8 @@ static int process_request(
 		/* Content-Range: bytes 222-3333/4000  HTTP_PARTIAL_CONTENT */
 		/* Transfer-Encoding: chunked */
 		if (http_MakeMessage(headers, resp_major, resp_minor,
-		    "R" "T" "GKLD" "s" "tcS" "Xc" "sCc",
+		    "R" "GKLD" "s" "tcS" "Xc" "sCc",
 		    HTTP_PARTIAL_CONTENT,	/* status code */
-		    finfo.content_type,	/* content type */
 		    RespInstr,	/* range info */
 		    RespInstr,	/* language info */
 		    "LAST-MODIFIED: ",
@@ -1252,10 +1021,9 @@ static int process_request(
 	} else if (RespInstr->IsRangeActive && !RespInstr->IsChunkActive) {
 		/* Content-Range: bytes 222-3333/4000  HTTP_PARTIAL_CONTENT */
 		if (http_MakeMessage(headers, resp_major, resp_minor,
-		    "R" "N" "T" "GLD" "s" "tcS" "Xc" "sCc",
+		    "R" "N" "GLD" "s" "tcS" "Xc" "sCc",
 		    HTTP_PARTIAL_CONTENT,	/* status code */
 		    RespInstr->ReadSendSize,	/* content length */
-		    finfo.content_type,	/* content type */
 		    RespInstr,	/* range info */
 		    RespInstr,	/* language info */
 		    "LAST-MODIFIED: ",
@@ -1266,9 +1034,8 @@ static int process_request(
 	} else if (!RespInstr->IsRangeActive && RespInstr->IsChunkActive) {
 		/* Transfer-Encoding: chunked */
 		if (http_MakeMessage(headers, resp_major, resp_minor,
-		    "RK" "TLD" "s" "tcS" "Xc" "sCc",
+		    "RK" "LD" "s" "tcS" "Xc" "sCc",
 		    HTTP_OK,	/* status code */
-		    finfo.content_type,	/* content type */
 		    RespInstr,	/* language info */
 		    "LAST-MODIFIED: ",
 		    &finfo.last_modified,
@@ -1279,10 +1046,9 @@ static int process_request(
 		/* !RespInstr->IsRangeActive && !RespInstr->IsChunkActive */
 		if (RespInstr->ReadSendSize >= 0) {
 			if (http_MakeMessage(headers, resp_major, resp_minor,
-			    "R" "N" "TLD" "s" "tcS" "Xc" "sCc",
+			    "R" "N" "LD" "s" "tcS" "Xc" "sCc",
 			    HTTP_OK,	/* status code */
 			    RespInstr->ReadSendSize,	/* content length */
-			    finfo.content_type,	/* content type */
 			    RespInstr,	/* language info */
 			    "LAST-MODIFIED: ",
 			    &finfo.last_modified,
@@ -1292,9 +1058,8 @@ static int process_request(
 			}
 		} else {
 			if (http_MakeMessage(headers, resp_major, resp_minor,
-			    "R" "TLD" "s" "tcS" "Xc" "sCc",
+			    "R" "LD" "s" "tcS" "Xc" "sCc",
 			    HTTP_OK,	/* status code */
-			    finfo.content_type,	/* content type */
 			    RespInstr,	/* language info */
 			    "LAST-MODIFIED: ",
 			    &finfo.last_modified,
@@ -1324,10 +1089,6 @@ static int process_request(
 
  error_handler:
 	free(request_doc);
-	ixmlFreeDOMString(finfo.content_type);
-	if (err_code != HTTP_OK && alias_grabbed) {
-		alias_release(alias);
-	}
 
 	return err_code;
 }
@@ -1470,7 +1231,6 @@ void web_server_callback(http_parser_t *parser, INOUT http_message_t *req,
 	enum resp_type rtype = 0;
 	membuffer headers;
 	membuffer filename;
-	struct xml_alias_t xmldoc;
 	struct SendInstruction RespInstr;
 
 	/*Initialize instruction header. */
@@ -1486,7 +1246,7 @@ void web_server_callback(http_parser_t *parser, INOUT http_message_t *req,
 
 	/*Process request should create the different kind of header depending on the */
 	/*the type of request. */
-	ret = process_request(req, &rtype, &headers, &filename, &xmldoc,
+	ret = process_request(req, &rtype, &headers, &filename,
 		&RespInstr);
 	if (ret != HTTP_OK) {
 		/* send error code */
@@ -1500,13 +1260,6 @@ void web_server_callback(http_parser_t *parser, INOUT http_message_t *req,
 					 &RespInstr,
 					 headers.buf, headers.length,
 					 filename.buf);
-			break;
-		case RESP_XMLDOC:
-			http_SendMessage(info, &timeout, "Ibb",
-				&RespInstr,
-				headers.buf, headers.length,
-				xmldoc.doc.buf, xmldoc.doc.length);
-			alias_release(&xmldoc);
 			break;
 		case RESP_WEBDOC:
 			/*http_SendVirtualDirDoc(info, &timeout, "Ibf",
