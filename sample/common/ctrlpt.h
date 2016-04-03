@@ -95,7 +95,6 @@ struct TvDevice {
     char FriendlyName[250];
     char PresURL[250];
     int  AdvrTimeOut;
-    struct tv_service TvService[TV_SERVICE_SERVCOUNT];
 };
 
 struct TvDeviceNode {

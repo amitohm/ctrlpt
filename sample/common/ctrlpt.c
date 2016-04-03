@@ -95,40 +95,10 @@ struct TvDeviceNode *GlobalDeviceList = NULL;
 int
 CtrlPointDeleteNode( struct TvDeviceNode *node )
 {
-	int rc, service, var;
-
 	if (NULL == node) {
 		SampleUtil_Print
 		    ("ERROR: CtrlPointDeleteNode: Node is empty\n");
 		return ERROR;
-	}
-
-	for (service = 0; service < TV_SERVICE_SERVCOUNT; service++) {
-		/*
-		   If we have a valid control SID, then unsubscribe 
-		 */
-		if (strcmp(node->device.TvService[service].SID, "") != 0) {
-			rc = UpnpUnSubscribe(ctrlpt_handle,
-					     node->device.TvService[service].
-					     SID);
-			if (UPNP_E_SUCCESS == rc) {
-				SampleUtil_Print
-				    ("Unsubscribed from Tv %s EventURL with SID=%s\n",
-				     TvServiceName[service],
-				     node->device.TvService[service].SID);
-			} else {
-				SampleUtil_Print
-				    ("Error unsubscribing to Tv %s EventURL -- %d\n",
-				     TvServiceName[service], rc);
-			}
-		}
-
-		for (var = 0; var < TvVarCount[service]; var++) {
-			if (node->device.TvService[service].VariableStrVal[var]) {
-				free(node->device.
-				     TvService[service].VariableStrVal[var]);
-			}
-		}
 	}
 
 	/*Notify New Device Added */
@@ -270,13 +240,12 @@ int CtrlPointSendAction(
 
 	rc = CtrlPointGetDevice(devnum, &devnode);
 	if (SUCCESS == rc) {
-	    printf("%s: ControlURL: %s\n",__func__,devnode->device.TvService[service].ControlURL);
+	    printf("%s: DescDocURL: %s\n",__func__,devnode->device.DescDocURL);
 
 	    rc = UpnpSendActionAsync(ctrlpt_handle,
-		    devnode->device.TvService[service].ControlURL,
+		    devnode->device.DescDocURL,
 		    actionname,NULL,
 		    CtrlPointCallbackEventHandler, NULL);
-
 	    if (rc != UPNP_E_SUCCESS) {
 		SampleUtil_Print("Error in UpnpSendActionAsync -- %d\n",
 			rc);
@@ -406,103 +375,6 @@ int CtrlPointPrintList()
 }
 
 /********************************************************************************
- * CtrlPointPrintDevice
- *
- * Description: 
- *       Print the identifiers and state table for a device from
- *       the global device list.
- *
- * Parameters:
- *   devnum -- The number of the device (order in the list,
- *             starting with 1)
- *
- ********************************************************************************/
-int CtrlPointPrintDevice(int devnum)
-{
-	struct TvDeviceNode *tmpdevnode;
-	int i = 0, service, var;
-	char spacer[15];
-
-	if (devnum <= 0) {
-		SampleUtil_Print(
-			"Error in CtrlPointPrintDevice: "
-			"invalid devnum = %d\n",
-			devnum);
-		return ERROR;
-	}
-
-	ithread_mutex_lock(&DeviceListMutex);
-
-	SampleUtil_Print("CtrlPointPrintDevice:\n");
-	tmpdevnode = GlobalDeviceList;
-	while (tmpdevnode) {
-		i++;
-		if (i == devnum)
-			break;
-		tmpdevnode = tmpdevnode->next;
-	}
-	if (!tmpdevnode) {
-		SampleUtil_Print(
-			"Error in CtrlPointPrintDevice: "
-			"invalid devnum = %d  --  actual device count = %d\n",
-			devnum, i);
-	} else {
-		SampleUtil_Print(
-			"  TvDevice -- %d\n"
-			"    |                  \n"
-			"    +- UDN        = %s\n"
-			"    +- DescDocURL     = %s\n"
-			"    +- FriendlyName   = %s\n"
-			"    +- PresURL        = %s\n"
-			"    +- Adver. TimeOut = %d\n",
-			devnum,
-			tmpdevnode->device.UDN,
-			tmpdevnode->device.DescDocURL,
-			tmpdevnode->device.FriendlyName,
-			tmpdevnode->device.PresURL,
-			tmpdevnode->device.AdvrTimeOut);
-		for (service = 0; service < TV_SERVICE_SERVCOUNT; service++) {
-			if (service < TV_SERVICE_SERVCOUNT - 1)
-				sprintf(spacer, "    |    ");
-			else
-				sprintf(spacer, "         ");
-			SampleUtil_Print(
-				"    |                  \n"
-				"    +- Tv %s Service\n"
-				"%s+- ServiceId       = %s\n"
-				"%s+- ServiceType     = %s\n"
-				"%s+- EventURL        = %s\n"
-				"%s+- ControlURL      = %s\n"
-				"%s+- SID             = %s\n"
-				"%s+- ServiceStateTable\n",
-				TvServiceName[service],
-				spacer,
-				tmpdevnode->device.TvService[service].ServiceId,
-				spacer,
-				tmpdevnode->device.TvService[service].ServiceType,
-				spacer,
-				tmpdevnode->device.TvService[service].EventURL,
-				spacer,
-				tmpdevnode->device.TvService[service].ControlURL,
-				spacer,
-				tmpdevnode->device.TvService[service].SID,
-				spacer);
-			for (var = 0; var < TvVarCount[service]; var++) {
-				SampleUtil_Print(
-					"%s     +- %-10s = %s\n",
-					spacer,
-					TvVarName[service][var],
-					tmpdevnode->device.TvService[service].VariableStrVal[var]);
-			}
-		}
-	}
-	SampleUtil_Print("\n");
-	ithread_mutex_unlock(&DeviceListMutex);
-
-	return SUCCESS;
-}
-
-/********************************************************************************
  * CtrlPointAddDevice
  *
  * Description: 
@@ -536,7 +408,6 @@ void CtrlPointAddDevice(
 	int ret = 1;
 	int found = 0;
 	int service;
-	int var;
 
 	ithread_mutex_lock(&DeviceListMutex);
 
@@ -602,32 +473,6 @@ void CtrlPointAddDevice(
 			strcpy(deviceNode->device.DescDocURL, location);
 			strcpy(deviceNode->device.FriendlyName, friendlyName);
 			deviceNode->device.AdvrTimeOut = expires;
-			for (service = 0; service < TV_SERVICE_SERVCOUNT;
-			     service++) {
-				if (serviceId[service] == NULL) {
-					/* not found */
-					continue;
-				}
-				strcpy(deviceNode->device.TvService[service].
-				       ServiceId, serviceId[service]);
-				strcpy(deviceNode->device.TvService[service].
-				       ServiceType, TvServiceType[service]);
-				strcpy(deviceNode->device.TvService[service].
-				       ControlURL, controlURL[service]);
-				strcpy(deviceNode->device.TvService[service].
-				       EventURL, eventURL[service]);
-				strcpy(deviceNode->device.TvService[service].
-				       SID, eventSID[service]);
-				for (var = 0; var < TvVarCount[service]; var++) {
-					deviceNode->device.
-					    TvService[service].VariableStrVal
-					    [var] =
-					    (char *)malloc(TV_MAX_VAL_LEN);
-					strcpy(deviceNode->device.
-					       TvService[service].VariableStrVal
-					       [var], "");
-				}
-			}
 			deviceNode->next = NULL;
 			/* Insert the new device node in the list */
 			if ((tmpdevnode = GlobalDeviceList)) {
@@ -659,14 +504,6 @@ void CtrlPointAddDevice(
 		free(UDN);
 	if (baseURL)
 		free(baseURL);
-	for (service = 0; service < TV_SERVICE_SERVCOUNT; service++) {
-		if (serviceId[service])
-			free(serviceId[service]);
-		if (controlURL[service])
-			free(controlURL[service]);
-		if (eventURL[service])
-			free(eventURL[service]);
-	}
 }
 
 void StateUpdate(char *UDN, int Service, IXML_Document *ChangedVariables,
@@ -725,128 +562,6 @@ void StateUpdate(char *UDN, int Service, IXML_Document *ChangedVariables,
 	}
 	return;
 	UDN = UDN;
-}
-
-/********************************************************************************
- * CtrlPointHandleEvent
- *
- * Description: 
- *       Handle a UPnP event that was received.  Process the event and update
- *       the appropriate service state table.
- *
- * Parameters:
- *   sid -- The subscription id for the event
- *   eventkey -- The eventkey number for the event
- *   changes -- The DOM document representing the changes
- *
- ********************************************************************************/
-void CtrlPointHandleEvent(
-	const char *sid,
-	int evntkey,
-	IXML_Document *changes)
-{
-	struct TvDeviceNode *tmpdevnode;
-	int service;
-
-	ithread_mutex_lock(&DeviceListMutex);
-
-	tmpdevnode = GlobalDeviceList;
-	while (tmpdevnode) {
-		for (service = 0; service < TV_SERVICE_SERVCOUNT; ++service) {
-			if (strcmp(tmpdevnode->device.TvService[service].SID, sid) ==  0) {
-				SampleUtil_Print("Received Tv %s Event: %d for SID %s\n",
-					TvServiceName[service],
-					evntkey,
-					sid);
-				StateUpdate(
-					tmpdevnode->device.UDN,
-					service,
-					changes,
-					(char **)&tmpdevnode->device.TvService[service].VariableStrVal);
-				break;
-			}
-		}
-		tmpdevnode = tmpdevnode->next;
-	}
-
-	ithread_mutex_unlock(&DeviceListMutex);
-}
-
-/********************************************************************************
- * CtrlPointHandleSubscribeUpdate
- *
- * Description: 
- *       Handle a UPnP subscription update that was received.  Find the 
- *       service the update belongs to, and update its subscription
- *       timeout.
- *
- * Parameters:
- *   eventURL -- The event URL for the subscription
- *   sid -- The subscription id for the subscription
- *   timeout  -- The new timeout for the subscription
- *
- ********************************************************************************/
-void CtrlPointHandleSubscribeUpdate(
-	const char *eventURL,
-	const Upnp_SID sid,
-	int timeout)
-{
-	struct TvDeviceNode *tmpdevnode;
-	int service;
-
-	ithread_mutex_lock(&DeviceListMutex);
-
-	tmpdevnode = GlobalDeviceList;
-	while (tmpdevnode) {
-		for (service = 0; service < TV_SERVICE_SERVCOUNT; service++) {
-			if (strcmp
-			    (tmpdevnode->device.TvService[service].EventURL,
-			     eventURL) == 0) {
-				SampleUtil_Print
-				    ("Received Tv %s Event Renewal for eventURL %s\n",
-				     TvServiceName[service], eventURL);
-				strcpy(tmpdevnode->device.TvService[service].
-				       SID, sid);
-				break;
-			}
-		}
-
-		tmpdevnode = tmpdevnode->next;
-	}
-
-	ithread_mutex_unlock(&DeviceListMutex);
-
-	return;
-	timeout = timeout;
-}
-
-void CtrlPointHandleGetVar(
-	const char *controlURL,
-	const char *varName,
-	const DOMString varValue)
-{
-
-	struct TvDeviceNode *tmpdevnode;
-	int service;
-
-	ithread_mutex_lock(&DeviceListMutex);
-
-	tmpdevnode = GlobalDeviceList;
-	while (tmpdevnode) {
-		for (service = 0; service < TV_SERVICE_SERVCOUNT; service++) {
-			if (strcmp
-			    (tmpdevnode->device.TvService[service].ControlURL,
-			     controlURL) == 0) {
-				SampleUtil_StateUpdate(varName, varValue,
-						       tmpdevnode->device.UDN,
-						       GET_VAR_COMPLETE);
-				break;
-			}
-		}
-		tmpdevnode = tmpdevnode->next;
-	}
-
-	ithread_mutex_unlock(&DeviceListMutex);
 }
 
 /********************************************************************************
@@ -923,22 +638,15 @@ int CtrlPointCallbackEventHandler(Upnp_EventType EventType, void *Event, void *C
 		if (sv_event->ErrCode != UPNP_E_SUCCESS) {
 			SampleUtil_Print("Error in Get Var Complete Callback -- %d\n",
 					sv_event->ErrCode);
-		} else {
-			CtrlPointHandleGetVar(
-				sv_event->CtrlUrl,
-				sv_event->StateVarName,
-				sv_event->CurrentVal);
 		}
 		break;
 	}
 	/* GENA Stuff */
 	case UPNP_EVENT_RECEIVED: {
 		struct Upnp_Event *e_event = (struct Upnp_Event *)Event;
+		SampleUtil_Print("Event -- %d\n",
+					e_event->EventKey);
 
-		CtrlPointHandleEvent(
-			e_event->Sid,
-			e_event->EventKey,
-			e_event->ChangedVariables);
 		break;
 	}
 	case UPNP_EVENT_SUBSCRIBE_COMPLETE:
@@ -949,11 +657,6 @@ int CtrlPointCallbackEventHandler(Upnp_EventType EventType, void *Event, void *C
 		if (es_event->ErrCode != UPNP_E_SUCCESS) {
 			SampleUtil_Print("Error in Event Subscribe Callback -- %d\n",
 					es_event->ErrCode);
-		} else {
-			CtrlPointHandleSubscribeUpdate(
-				es_event->PublisherUrl,
-				es_event->Sid,
-				es_event->TimeOut);
 		}
 		break;
 	}
@@ -971,10 +674,6 @@ int CtrlPointCallbackEventHandler(Upnp_EventType EventType, void *Event, void *C
 			newSID);
 		if (ret == UPNP_E_SUCCESS) {
 			SampleUtil_Print("Subscribed to EventURL with SID=%s\n", newSID);
-			CtrlPointHandleSubscribeUpdate(
-				es_event->PublisherUrl,
-				newSID,
-				TimeOut);
 		} else {
 			SampleUtil_Print("Error Subscribing to EventURL -- %d\n", ret);
 		}
@@ -1198,7 +897,6 @@ enum cmdloop_tvcmds {
 	CLOSEAP,
 	GETDEVINFO,
 	SETNAME,
-	PRTDEV,
 	LSTDEV,
 	REFRESH,
 	EXITCMD
@@ -1229,7 +927,6 @@ static struct cmdloop_commands cmdloop_cmdlist[] = {
 	{"CloseAP",   	  CLOSEAP,     2, "<devnum>"},
 	{"GetDevInfo",	  GETDEVINFO,  2, "<devnum>"},
 	{"SetName",   	  SETNAME,     2, "<devnum>"},
-	{"PrintDev",      PRTDEV,      2, "<devnum>"},
 	{"PowerOn",       POWON,       2, "<devnum>"},
 	{"PowerOff",      POWOFF,      2, "<devnum>"},
 	{"Exit",          EXITCMD,     1, ""}
@@ -1320,9 +1017,6 @@ int CtrlPointProcessCommand(char *cmdline)
 		break;
 	case SETNAME:
 		CtrlPointSendSetName(arg1);
-		break;
-	case PRTDEV:
-		CtrlPointPrintDevice(arg1);
 		break;
 	case LSTDEV:
 		CtrlPointPrintList();
