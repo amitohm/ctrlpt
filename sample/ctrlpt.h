@@ -91,7 +91,7 @@ extern struct TvDeviceNode *GlobalDeviceList;
 
 struct TvDevice {
     char UDN[250];
-    char DescDocURL[250];
+    char Location[250];
     char FriendlyName[250];
     char PresURL[250];
     int  AdvrTimeOut;

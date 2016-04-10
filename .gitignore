@@ -9,9 +9,9 @@ ixml/.libs/
 ixml/src/.deps/
 upnp/.libs/
 sample/.libs/
+sample/.deps/
 sample/common/.deps/
 sample/ctrlpt
-sample/linux/.deps/
 upnp/src/.deps/
 upnp/src/api/.deps/
 upnp/src/gena/.deps/

@@ -241,10 +241,10 @@ int CtrlPointSendAction(
 
 	rc = CtrlPointGetDevice(devnum, &devnode);
 	if (SUCCESS == rc) {
-	    printf("%s: DescDocURL: %s\n",__func__,devnode->device.DescDocURL);
+	    printf("%s: Location: %s\n",__func__,devnode->device.Location);
 
 	    rc = UpnpSendActionAsync(ctrlpt_handle,
-		    devnode->device.DescDocURL,
+		    devnode->device.Location,
 		    actionname,NULL,
 		    CtrlPointCallbackEventHandler, NULL);
 	    if (rc != UPNP_E_SUCCESS) {
@@ -437,7 +437,7 @@ void CtrlPointAddDevice(
 			    (struct TvDeviceNode *)
 			    malloc(sizeof(struct TvDeviceNode));
 			strcpy(deviceNode->device.UDN, UDN);
-			strcpy(deviceNode->device.DescDocURL, location);
+			strcpy(deviceNode->device.Location, location);
 			deviceNode->device.AdvrTimeOut = expires;
 			deviceNode->next = NULL;
 			/* Insert the new device node in the list */
@@ -928,6 +928,36 @@ int CtrlPointProcessCommand(char *cmdline)
 		SampleUtil_Print("Invalid args in command; see 'Help'\n");
 
 	return SUCCESS;
+}
+
+int main(int argc, char **argv)
+{
+    int rc;
+    ithread_t cmdloop_thread;
+    int sig;
+    sigset_t sigs_to_catch;
+    int code;
+
+    rc = CtrlPointStart(linux_print, NULL, 0);
+    if (rc != SUCCESS) {
+	SampleUtil_Print("Error starting UPnP Control Point\n");
+	return rc;
+    }
+    /* start a command loop thread */
+    code = ithread_create(&cmdloop_thread, NULL, CtrlPointCommandLoop, NULL);
+    if (code !=  0) {
+	return UPNP_E_INTERNAL_ERROR;
+    }
+    /* Catch Ctrl-C and properly shutdown */
+    sigemptyset(&sigs_to_catch);
+    sigaddset(&sigs_to_catch, SIGINT);
+    sigwait(&sigs_to_catch, &sig);
+    SampleUtil_Print("Shutting down on signal %d...\n", sig);
+    rc = CtrlPointStop();
+
+    return rc;
+    argc = argc;
+    argv = argv;
 }
 
 /*! @} Control Point Sample Module */
