@@ -8,17 +8,18 @@ SUBDIRS = .
 
 AM_CPPFLAGS = \
 	-I$(srcdir)/inc \
-	-I$(top_srcdir)/threadutil/inc
+	-I$(top_srcdir)/threadutil/inc \
+	-I$(top_srcdir)/util/inc
 
 LDADD = \
 	libupnp.la \
-	$(top_builddir)/threadutil/libthreadutil.la
+	$(top_builddir)/threadutil/libthreadutil.la \
+	$(top_builddir)/util/libutil.la
 
 upnpincludedir = $(includedir)/upnp
 upnpinclude_HEADERS = \
 	inc/UpnpString.h \
 	inc/upnp.h \
-	inc/upnpdebug.h \
 	inc/UpnpGlobal.h \
 	inc/UpnpInet.h \
 	inc/UpnpIntTypes.h \
@@ -26,10 +27,6 @@ upnpinclude_HEADERS = \
 	inc/UpnpUniStd.h
 
 nodist_upnpinclude_HEADERS = inc/upnpconfig.h 
-if ENABLE_TOOLS
-upnpinclude_HEADERS += inc/upnptools.h 
-endif
-
 
 lib_LTLIBRARIES = libupnp.la
 
@@ -114,15 +111,6 @@ endif
 libupnp_la_SOURCES += \
 	src/api/UpnpString.c \
 	src/api/upnpapi.c
-
-if ENABLE_TOOLS
-libupnp_la_SOURCES += src/api/upnptools.c
-endif
-
-if ENABLE_DEBUG
-libupnp_la_SOURCES += src/api/upnpdebug.c 
-endif
-
 
 # uuid
 if ENABLE_UUID

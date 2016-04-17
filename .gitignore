@@ -5,8 +5,6 @@ config.log
 config.status
 threadutil/.libs/
 threadutil/src/.deps/
-ixml/.libs/
-ixml/src/.deps/
 upnp/.libs/
 sample/.libs/
 sample/.deps/
@@ -26,6 +24,8 @@ upnp/src/soap/.deps/
 upnp/src/ssdp/.deps/
 upnp/src/urlconfig/.deps/
 upnp/src/uuid/.deps/
+util/src/.libs/
+util/src/.deps/
 *.o
 *.la
 *.lo

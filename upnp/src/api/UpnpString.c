@@ -22,12 +22,6 @@
 #include <stdlib.h> /* for calloc(), free() */
 #include <string.h> /* for strlen(), strdup() */
 
-#ifdef WIN32
-	#define strcasecmp stricmp
-#else
-	/* Other systems have strncasecmp */
-#endif
-
 #ifndef UPNP_USE_MSVCPP
 	/* VC has strnlen which is already included but with (potentially) different linkage */
 	/* strnlen() is a GNU extension. */
@@ -147,15 +141,6 @@ size_t UpnpString_get_Length(const UpnpString *p)
 	return ((struct SUpnpString *)p)->m_length;
 }
 
-void UpnpString_set_Length(UpnpString *p, size_t n)
-{
-	if (((struct SUpnpString *)p)->m_length > n) {
-		((struct SUpnpString *)p)->m_length = n;
-		/* No need to realloc now, will do later when needed. */
-		((struct SUpnpString *)p)->m_string[n] = 0;
-	}
-}
-
 const char *UpnpString_get_String(const UpnpString *p)
 {
 	return ((struct SUpnpString *)p)->m_string;
@@ -190,22 +175,6 @@ void UpnpString_clear(UpnpString *p)
 	((struct SUpnpString *)p)->m_length = (size_t)0;
 	/* No need to realloc now, will do later when needed. */
 	((struct SUpnpString *)p)->m_string[0] = 0;
-}
-
-int UpnpString_cmp(UpnpString *p, UpnpString *q)
-{
-	const char *cp = UpnpString_get_String(p);
-	const char *cq = UpnpString_get_String(q);
-
-	return strcmp(cp, cq);
-}
-
-int UpnpString_casecmp(UpnpString *p, UpnpString *q)
-{
-	const char *cp = UpnpString_get_String(p);
-	const char *cq = UpnpString_get_String(q);
-
-	return strcasecmp(cp, cq);
 }
 
 /* @} UpnpString */

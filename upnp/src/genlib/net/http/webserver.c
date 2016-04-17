@@ -66,6 +66,9 @@
 	 #define snprintf _snprintf
 #endif
 
+#undef DBG_TAG
+#define DBG_TAG "WEBSERVER"
+
 /*!
  * Response Types.
  */
@@ -364,7 +367,7 @@ static int get_file_info(
 		fclose(fp);
 	info->file_length = s.st_size;
 	info->last_modified = s.st_mtime;
-	UpnpPrintf(UPNP_INFO, HTTP, __FILE__, __LINE__,
+	CDBG_INFO(
 		"file info: %s, length: %lld, last_mod=%s readable=%d\n",
 		filename, (long long)info->file_length,
 		web_server_asctime_r(http_gmtime_r(&info->last_modified, &date), buffer),
@@ -1174,7 +1177,7 @@ static int http_RecvPostMessage(
 				}
 			} else if (num_read == 0) {
 				if (ok_on_close) {
-					UpnpPrintf(UPNP_INFO, HTTP, __FILE__, __LINE__,
+					CDBG_INFO(
 						"<<< (RECVD) <<<\n%s\n-----------------\n",
 						parser->msg.msg.buf);
 					print_http_headers(&parser->msg);
@@ -1288,12 +1291,12 @@ void web_server_callback(http_parser_t *parser, INOUT http_message_t *req,
 				headers.buf, headers.length);
 			break;
 		default:
-			UpnpPrintf(UPNP_INFO, HTTP, __FILE__, __LINE__,
+			CDBG_INFO(
 				"webserver: Invalid response type received.\n");
 			assert(0);
 		}
 	}
-	UpnpPrintf(UPNP_INFO, HTTP, __FILE__, __LINE__,
+	CDBG_INFO(
 		   "webserver: request processed...\n");
 	membuffer_destroy(&headers);
 	membuffer_destroy(&filename);

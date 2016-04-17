@@ -44,7 +44,7 @@
 #include "httpparser.h"
 #include "statcodes.h"
 #include "unixutil.h"
-#include "upnpdebug.h"
+#include "debug.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -56,6 +56,10 @@
 /* entity positions */
 
 #define NUM_HTTP_METHODS 9
+
+#undef DBG_TAG
+#define DBG_TAG "HTTP"
+
 static str_int_entry Http_Method_Table[NUM_HTTP_METHODS] = {
 	{"GET", HTTPMETHOD_GET},
 	{"HEAD", HTTPMETHOD_HEAD},
@@ -1732,7 +1736,7 @@ parser_parse_chunky_entity( INOUT http_parser_t * parser )
     status = match( scanner, "%x%L%c", &parser->chunk_size, &dummy );
     if( status != ( parse_status_t ) PARSE_OK ) {
         scanner->cursor = save_pos;
-        UpnpPrintf( UPNP_INFO, HTTP, __FILE__, __LINE__,
+        CDBG_INFO(
             "CHUNK COULD NOT BE PARSED\n" );
         return status;
     }
@@ -1861,7 +1865,7 @@ parser_get_entity_read_method( INOUT http_parser_t * parser )
         if( raw_find_str( &hdr_value, "chunked" ) >= 0 ) {
             /* read method to use chunked transfer encoding */
             parser->ent_position = ENTREAD_USING_CHUNKED;
-            UpnpPrintf( UPNP_INFO, HTTP, __FILE__, __LINE__,
+            CDBG_INFO(
                 "Found Chunked Encoding ....\n" );
 
             return PARSE_CONTINUE_1;

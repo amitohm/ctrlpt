@@ -48,7 +48,7 @@
 #include "upnp.h"
 #include "UpnpStdInt.h" /* for ssize_t */
 
-#include "upnpdebug.h"
+#include "debug.h"
 #include "upnputil.h"
 
 #include <assert.h>
@@ -60,6 +60,9 @@
 #ifndef MSG_NOSIGNAL
 #define MSG_NOSIGNAL 0
 #endif
+
+#undef DBG_TAG
+#define DBG_TAG "SOCK"
 
 int sock_init(SOCKINFO *info, SOCKET sockfd)
 {
@@ -95,7 +98,7 @@ int sock_destroy(SOCKINFO *info, int ShutdownMethod)
 	if (info->socket != INVALID_SOCKET) {
 		if (shutdown(info->socket, ShutdownMethod) == -1) {
 			strerror_r(errno, errorBuffer, ERROR_BUFFER_LEN);
-			UpnpPrintf(UPNP_INFO, HTTP, __FILE__, __LINE__,
+			CDBG_INFO(
 				   "Error in shutdown: %s\n", errorBuffer);
 		}
 		if (sock_close(info->socket) == -1) {

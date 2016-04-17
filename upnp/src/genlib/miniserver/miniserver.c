@@ -68,6 +68,9 @@
 /*! . */
 #define APPLICATION_LISTENING_PORT 49152
 
+#undef DBG_TAG
+#define DBG_TAG "MSERV"
+
 struct mserv_request_t {
 	/*! Connection handle. */
 	SOCKET connfd;
@@ -128,10 +131,10 @@ static int receive_from_stopSock(SOCKET ssock, fd_set *set)
 			inet_ntop(AF_INET,
 				&((struct sockaddr_in*)&clientAddr)->sin_addr,
 				buf_ntop, sizeof(buf_ntop));
-			UpnpPrintf( UPNP_INFO, MSERV, __FILE__, __LINE__,
+			CDBG_INFO(
 				"Received response: %s From host %s \n",
 				requestBuf, buf_ntop );
-			UpnpPrintf( UPNP_PACKET, MSERV, __FILE__, __LINE__,
+			CDBG_INFO(
 				"Received multicast packet: \n %s\n",
 				requestBuf);
 			if (NULL != strstr(requestBuf, "ShutDown")) {
@@ -197,7 +200,7 @@ static void RunMiniServer(
 		}
 		if (ret == SOCKET_ERROR) {
 			strerror_r(errno, errorBuffer, ERROR_BUFFER_LEN);
-			UpnpPrintf(UPNP_CRITICAL, SSDP, __FILE__, __LINE__,
+			CDBG_ERROR(
 				"Error in select(): %s\n", errorBuffer);
 			continue;
 		} else {
@@ -257,7 +260,7 @@ static int get_port(
 	} else if(sockinfo.ss_family == AF_INET6) {
 		*port = ntohs(((struct sockaddr_in6*)&sockinfo)->sin6_port);
 	}
-	UpnpPrintf(UPNP_INFO, MSERV, __FILE__, __LINE__,
+	CDBG_INFO(
 		"sockfd = %d, .... port = %d\n", sockfd, (int)*port);
 
 	return 0;
@@ -285,7 +288,7 @@ static int get_miniserver_stopsock(
 	miniServerStopSock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (miniServerStopSock == INVALID_SOCKET) {
 		strerror_r(errno, errorBuffer, ERROR_BUFFER_LEN);
-		UpnpPrintf(UPNP_CRITICAL, MSERV, __FILE__, __LINE__,
+		CDBG_ERROR(
 			"Error in socket(): %s\n", errorBuffer);
 		return UPNP_E_OUTOF_SOCKET;
 	}
@@ -296,9 +299,7 @@ static int get_miniserver_stopsock(
 	ret = bind(miniServerStopSock, (struct sockaddr *)&stop_sockaddr,
 		sizeof(stop_sockaddr));
 	if (ret == SOCKET_ERROR) {
-		UpnpPrintf(UPNP_CRITICAL,
-		MSERV, __FILE__, __LINE__,
-			"Error in binding localhost!!!\n");
+		CDBG_ERROR("Error in binding localhost!!!\n");
 		sock_close(miniServerStopSock);
 		return UPNP_E_SOCKET_BIND;
 	}
@@ -438,7 +439,7 @@ int StopMiniServer()
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock == INVALID_SOCKET) {
 		strerror_r(errno, errorBuffer, ERROR_BUFFER_LEN);
-		UpnpPrintf(UPNP_INFO, SSDP, __FILE__, __LINE__,
+		CDBG_INFO(
 			"SSDP_SERVER: StopSSDPServer: Error in socket() %s\n",
 			errorBuffer);
 		return 0;

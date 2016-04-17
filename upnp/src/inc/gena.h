@@ -119,22 +119,18 @@ extern ithread_mutex_t GlobalClientSubscribeMutex;
  * \brief Locks the subscription.
  */
 #define SubscribeLock() \
-	UpnpPrintf(UPNP_INFO, GENA, __FILE__, __LINE__, \
-		"Trying Subscribe Lock");  \
+	CDBG_INFO("Trying Subscribe Lock");  \
 	ithread_mutex_lock(&GlobalClientSubscribeMutex); \
-	UpnpPrintf(UPNP_INFO, GENA, __FILE__, __LINE__, \
-		"Subscribe Lock");
+	CDBG_INFO("Subscribe Lock");
 
 
 /*!
  * \brief Unlocks the subscription.
  */
 #define SubscribeUnlock() \
-	UpnpPrintf(UPNP_INFO, GENA, __FILE__, __LINE__, \
-		"Trying Subscribe UnLock"); \
+	CDBG_INFO("Trying Subscribe UnLock"); \
 	ithread_mutex_unlock(&GlobalClientSubscribeMutex); \
-	UpnpPrintf(UPNP_INFO, GENA, __FILE__, __LINE__, \
-		"Subscribe UnLock");
+	CDBG_INFO("Subscribe UnLock");
 
 
 /*!

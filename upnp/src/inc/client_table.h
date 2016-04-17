@@ -12,7 +12,6 @@
 extern "C" {
 #endif
 
-#include "upnpdebug.h"
 #include "upnp.h"
 #include "UpnpString.h"
 #include "upnp_timeout.h"

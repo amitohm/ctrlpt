@@ -41,6 +41,7 @@
 
 
 #include "client_table.h"
+#include "debug.h"
 #include "upnp.h"
 #include "VirtualDir.h"		/* for struct VirtualDirCallbacks */
 
@@ -104,21 +105,21 @@ Upnp_Handle_Type GetHandleInfo(
 
 
 #define HandleWriteLock()  \
-	UpnpPrintf(UPNP_INFO, API, __FILE__, __LINE__, "Trying a write lock"); \
+	CDBG_INFO("Trying a write lock"); \
 	ithread_rwlock_wrlock(&GlobalHndRWLock); \
-	UpnpPrintf(UPNP_INFO, API, __FILE__, __LINE__, "Write lock acquired");
+	CDBG_INFO("Write lock acquired");
 
 
 #define HandleReadLock()  \
-	UpnpPrintf(UPNP_INFO, API, __FILE__, __LINE__, "Trying a read lock"); \
+	CDBG_INFO("Trying a read lock"); \
 	ithread_rwlock_rdlock(&GlobalHndRWLock); \
-	UpnpPrintf(UPNP_INFO, API, __FILE__, __LINE__, "Read lock acquired");
+	CDBG_INFO("Read lock acquired");
 
 
 #define HandleUnlock() \
-	UpnpPrintf(UPNP_INFO, API,__FILE__, __LINE__, "Trying Unlock"); \
+	CDBG_INFO("Trying Unlock"); \
 	ithread_rwlock_unlock(&GlobalHndRWLock); \
-	UpnpPrintf(UPNP_INFO, API, __FILE__, __LINE__, "Unlocked rwlock");
+	CDBG_INFO("Unlocked rwlock");
 
 
 /*!

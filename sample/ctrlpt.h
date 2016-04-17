@@ -48,15 +48,14 @@
 extern "C" {
 #endif
 
-#include "sample_util.h"
-
-#include "upnp.h"
-#include "UpnpString.h"
-#include "upnptools.h"
-
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
+
+#include "upnp.h"
+#include "debug.h"
+#include "UpnpString.h"
 
 #define TV_SERVICE_SERVCOUNT	1
 #define TV_SERVICE_CONTROL	0
@@ -140,7 +139,7 @@ void CtrlPointVerifyTimeouts(
 
 void	CtrlPointPrintCommands(void);
 void*	CtrlPointCommandLoop(void *);
-int	CtrlPointStart(print_string printFunctionPtr, state_update updateFunctionPtr, int combo);
+int	CtrlPointStart(void);
 int	CtrlPointStop(void);
 int	CtrlPointProcessCommand(char *cmdline);
 

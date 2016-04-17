@@ -11,6 +11,7 @@ DISTCHECK_CONFIGURE_FLAGS = --enable-debug --enable-samples
 SUBDIRS = \
 	threadutil \
 	upnp \
+	util \
 	sample
 
 

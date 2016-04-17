@@ -58,6 +58,9 @@
 #define SOAP_ACTION_RESP_ERROR  3
 #define SOAP_VAR_RESP_ERROR	4
 
+#undef DBG_TAG
+#define DBG_TAG "SOAP"
+
 /*!
  * \brief Adds "MAN" field in the HTTP header.
  *
@@ -180,7 +183,7 @@ SoapSendAction( IN char *action_url,
 
     err_code = UPNP_E_OUTOF_MEMORY; /* default error */
 
-    UpnpPrintf( UPNP_INFO, SOAP, __FILE__, __LINE__,
+    CDBG_INFO(
         "Inside SoapSendAction():" );
     /* init */
     membuffer_init( &request );
@@ -192,7 +195,7 @@ SoapSendAction( IN char *action_url,
         goto error_handler;
     }
 
-    UpnpPrintf( UPNP_INFO, SOAP, __FILE__, __LINE__,
+    CDBG_INFO(
         "path=%.*s, hostport=%.*s\n",
         (int)url.pathquery.size,
         url.pathquery.buff,

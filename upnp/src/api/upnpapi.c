@@ -71,6 +71,9 @@
 	#include <sys/types.h>
 #endif
 
+#undef DBG_TAG
+#define DBG_TAG "API"
+
 #ifndef IN6_IS_ADDR_GLOBAL
 #define IN6_IS_ADDR_GLOBAL(a) \
 		((((__const uint32_t *) (a))[0] & htonl((uint32_t)0x70000000)) \
@@ -318,13 +321,13 @@ static int UpnpInitPreamble(void)
 	srand((unsigned int)time(NULL));
 
 	/* Initialize debug output. */
-	retVal = UpnpInitLog();
+	retVal = DbgInitLog();
 	if (retVal != UPNP_E_SUCCESS) {
 		/* UpnpInitLog does not return a valid UPNP_E_*. */
 		return UPNP_E_INIT_FAILED;
 	}
 
-	UpnpPrintf( UPNP_INFO, API, __FILE__, __LINE__, "Inside UpnpInitPreamble\n" );
+	CDBG_INFO("Inside UpnpInitPreamble\n" );
 
 	/* Initialize SDK global mutexes. */
 	retVal = UpnpInitMutexes();
@@ -379,15 +382,14 @@ static int UpnpInitStartServers(
 	int retVal = 0;
 #endif
 
-	UpnpPrintf( UPNP_INFO, API, __FILE__, __LINE__,
-		"Entering UpnpInitStartServers\n" );
+	CDBG_INFO("Entering UpnpInitStartServers\n" );
 
 #if EXCLUDE_MINISERVER == 0
 	LOCAL_PORT_V4 = DestPort;
 	LOCAL_PORT_V6 = DestPort;
 	retVal = StartMiniServer(&LOCAL_PORT_V4, &LOCAL_PORT_V6);
 	if (retVal != UPNP_E_SUCCESS) {
-		UpnpPrintf(UPNP_CRITICAL, API, __FILE__, __LINE__,
+		CDBG_INFO(
 			"Miniserver failed to start");
 		UpnpFinish();
 		return retVal;
@@ -403,7 +405,7 @@ static int UpnpInitStartServers(
 	}
 #endif
 
-	UpnpPrintf(UPNP_INFO, API, __FILE__, __LINE__,
+	CDBG_INFO(
 		"Exiting UpnpInitStartServers\n");
 
 	return UPNP_E_SUCCESS;
@@ -431,7 +433,7 @@ int UpnpInit(const char *HostIP, unsigned short DestPort)
 		goto exit_function;
 	}
 
-	UpnpPrintf(UPNP_INFO, API, __FILE__, __LINE__,
+	CDBG_INFO(
 		"UpnpInit with HostIP=%s, DestPort=%d.\n", 
 		HostIP ? HostIP : "", (int)DestPort);
 
@@ -456,7 +458,7 @@ int UpnpInit(const char *HostIP, unsigned short DestPort)
 		goto exit_function;
 	}
 
-	UpnpPrintf(UPNP_INFO, API, __FILE__, __LINE__,
+	CDBG_INFO(
 		"Host Ip: %s Host Port: %d\n", gIF_IPV4,
 		(int)LOCAL_PORT_V4);
 
@@ -488,7 +490,7 @@ int UpnpInit2(const char *IfName, unsigned short DestPort)
 		goto exit_function;
 	}
 
-	UpnpPrintf(UPNP_INFO, API, __FILE__, __LINE__,
+	CDBG_INFO(
 		"UpnpInit2 with IfName=%s, DestPort=%d.\n", 
 		IfName ? IfName : "", DestPort);
 
@@ -533,7 +535,7 @@ void PrintThreadPoolStats(
 {
 	ThreadPoolStats stats;
 	ThreadPoolGetStats(tp, &stats);
-	UpnpPrintf(UPNP_INFO, API, DbgFileName, DbgLineNo,
+	CDBG_INFO(
 		"%s\n"
 		"High Jobs pending: %d\n"
 		"Med Jobs Pending: %d\n"
@@ -584,10 +586,9 @@ int UpnpFinish(void)
 
 	if (UpnpSdkInit != 1)
 		return UPNP_E_FINISH;
-	UpnpPrintf(UPNP_INFO, API, __FILE__, __LINE__,
-		   "Inside UpnpFinish: UpnpSdkInit is %d\n", UpnpSdkInit);
+	CDBG_INFO("Inside UpnpFinish: UpnpSdkInit is %d\n", UpnpSdkInit);
 	if (UpnpSdkInit == 1)
-		UpnpPrintf(UPNP_INFO, API, __FILE__, __LINE__,
+		CDBG_INFO(
 			"UpnpFinish: UpnpSdkInit is ONE\n");
 	PrintThreadPoolStats(&gSendThreadPool, __FILE__, __LINE__,
 		"Send Thread Pool");
@@ -628,9 +629,8 @@ int UpnpFinish(void)
 	/* remove all virtual dirs */
 	UpnpRemoveAllVirtualDirs();
 	UpnpSdkInit = 0;
-	UpnpPrintf(UPNP_INFO, API, __FILE__, __LINE__,
-		"Exiting UpnpFinish: UpnpSdkInit is :%d:\n", UpnpSdkInit);
-	UpnpCloseLog();
+	CDBG_INFO("Exiting UpnpFinish: UpnpSdkInit is :%d:\n", UpnpSdkInit);
+	DbgCloseLog();
 	/* Clean-up ithread library resources */
 	ithread_cleanup_library();
 
@@ -709,14 +709,14 @@ static int FreeHandle(
 {
 	int ret = UPNP_E_INVALID_HANDLE;
 
-	UpnpPrintf(UPNP_INFO, API, __FILE__, __LINE__,
+	CDBG_INFO(
 		"FreeHandle: entering, Handle is %d\n", Upnp_Handle);
 	if (Upnp_Handle < 1 || Upnp_Handle >= NUM_HANDLE) {
-		UpnpPrintf(UPNP_CRITICAL, API, __FILE__, __LINE__,
+		CDBG_INFO(
 			"FreeHandle: Handle %d is out of range\n",
 			Upnp_Handle);
 	} else if (HandleTable[Upnp_Handle] == NULL) {
-		UpnpPrintf(UPNP_CRITICAL, API, __FILE__, __LINE__,
+		CDBG_INFO(
 			"FreeHandle: HandleTable[%d] is NULL\n",
 			Upnp_Handle);
 	} else {
@@ -724,7 +724,7 @@ static int FreeHandle(
 		HandleTable[Upnp_Handle] = NULL;
 		ret = UPNP_E_SUCCESS;
 	}
-	UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+	CDBG_INFO(
 		"FreeHandle: exiting, ret = %d.\n", ret);
 
 	return ret;
@@ -738,7 +738,7 @@ int UpnpRegisterClient(Upnp_FunPtr Fun, const void *Cookie,
 
 	if (UpnpSdkInit != 1)
 		return UPNP_E_FINISH;
-	UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+	CDBG_INFO(
 		   "Inside UpnpRegisterClient \n");
 	if (Fun == NULL || Hnd == NULL)
 		return UPNP_E_INVALID_PARAM;
@@ -766,7 +766,7 @@ int UpnpRegisterClient(Upnp_FunPtr Fun, const void *Cookie,
 	UpnpSdkClientRegistered = 1;
 	HandleUnlock();
 
-	UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+	CDBG_INFO(
 		   "Exiting UpnpRegisterClient \n");
 
 	return UPNP_E_SUCCESS;
@@ -782,7 +782,7 @@ int UpnpUnRegisterClient(UpnpClient_Handle Hnd)
 
 	if (UpnpSdkInit != 1)
 		return UPNP_E_FINISH;
-	UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+	CDBG_INFO(
 		   "Inside UpnpUnRegisterClient \n");
 
 	HandleLock();
@@ -820,7 +820,7 @@ int UpnpUnRegisterClient(UpnpClient_Handle Hnd)
 	UpnpSdkClientRegistered = 0;
 	HandleUnlock();
 
-	UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+	CDBG_INFO(
 		   "Exiting UpnpUnRegisterClient \n");
 
 	return UPNP_E_SUCCESS;
@@ -852,7 +852,7 @@ int UpnpSearchAsync(
         return UPNP_E_FINISH;
     }
 
-    UpnpPrintf( UPNP_ALL, API, __FILE__, __LINE__,
+    CDBG_INFO(
         "Inside UpnpSearchAsync\n" );
 
     HandleReadLock();
@@ -876,7 +876,7 @@ int UpnpSearchAsync(
     if (retVal != 1)
         return retVal;
 
-    UpnpPrintf( UPNP_ALL, API, __FILE__, __LINE__,
+    CDBG_INFO(
         "Exiting UpnpSearchAsync \n" );
 
     return UPNP_E_SUCCESS;
@@ -914,7 +914,7 @@ int UpnpSubscribeAsync(
         return UPNP_E_FINISH;
     }
 
-    UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+    CDBG_INFO(
         "Inside UpnpSubscribeAsync\n");
 
     HandleReadLock();
@@ -960,7 +960,7 @@ int UpnpSubscribeAsync(
 	free(Param);
     }
 
-    UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+    CDBG_INFO(
         "Exiting UpnpSubscribeAsync\n");
 
     return UPNP_E_SUCCESS;
@@ -981,7 +981,7 @@ int UpnpSubscribe(
 	UpnpString *EvtUrl = UpnpString_new();
 	UpnpString *SubsIdTmp = UpnpString_new();
 	
-	UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__, "Inside UpnpSubscribe\n");
+	CDBG_INFO( "Inside UpnpSubscribe\n");
 
 	if (UpnpSdkInit != 1) {
 		retVal = UPNP_E_FINISH;
@@ -1029,7 +1029,7 @@ int UpnpSubscribe(
 	strncpy(SubsId, UpnpString_get_String(SubsIdTmp), sizeof(Upnp_SID) - 1);
 
 exit_function:
-	UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+	CDBG_INFO(
 		"Exiting UpnpSubscribe, retVal=%d\n", retVal);
 
 	UpnpString_delete(SubsIdTmp);
@@ -1047,7 +1047,7 @@ int UpnpUnSubscribe(UpnpClient_Handle Hnd, const Upnp_SID SubsId)
 	int retVal;
 	UpnpString *SubsIdTmp = UpnpString_new();
 
-	UpnpPrintf( UPNP_ALL, API, __FILE__, __LINE__, "Inside UpnpUnSubscribe\n");
+	CDBG_INFO( "Inside UpnpUnSubscribe\n");
 
 	if (UpnpSdkInit != 1) {
 		retVal = UPNP_E_FINISH;
@@ -1078,7 +1078,7 @@ int UpnpUnSubscribe(UpnpClient_Handle Hnd, const Upnp_SID SubsId)
 	retVal = genaUnSubscribe(Hnd, SubsIdTmp);
 
 exit_function:
-	UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+	CDBG_INFO(
 		"Exiting UpnpUnSubscribe, retVal=%d\n", retVal);
 
 	UpnpString_delete(SubsIdTmp);
@@ -1102,7 +1102,7 @@ int UpnpUnSubscribeAsync(
 
 	memset(&job, 0, sizeof(job));
 
-	UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__, "Inside UpnpUnSubscribeAsync\n");
+	CDBG_INFO( "Inside UpnpUnSubscribeAsync\n");
 
 	if (UpnpSdkInit != 1) {
 		retVal = UPNP_E_FINISH;
@@ -1149,7 +1149,7 @@ int UpnpUnSubscribeAsync(
 	}
 
 exit_function:
-	UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__, "Exiting UpnpUnSubscribeAsync\n");
+	CDBG_INFO( "Exiting UpnpUnSubscribeAsync\n");
 
 	return retVal;
 }
@@ -1166,7 +1166,7 @@ int UpnpRenewSubscription(
 	int retVal;
 	UpnpString *SubsIdTmp = UpnpString_new();
 
-	UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__, "Inside UpnpRenewSubscription\n");
+	CDBG_INFO( "Inside UpnpRenewSubscription\n");
 
 	if (UpnpSdkInit != 1) {
 		retVal = UPNP_E_FINISH;
@@ -1202,7 +1202,7 @@ int UpnpRenewSubscription(
 	retVal = genaRenewSubscription(Hnd, SubsIdTmp, TimeOut);
 
 exit_function:
-	UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+	CDBG_INFO(
 		"Exiting UpnpRenewSubscription, retVal=%d\n", retVal);
 
 	UpnpString_delete(SubsIdTmp);
@@ -1230,7 +1230,7 @@ int UpnpRenewSubscriptionAsync(
         return UPNP_E_FINISH;
     }
 
-    UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+    CDBG_INFO(
         "Inside UpnpRenewSubscriptionAsync\n");
     HandleReadLock();
     switch( GetHandleInfo( Hnd, &SInfo ) ) {
@@ -1276,7 +1276,7 @@ int UpnpRenewSubscriptionAsync(
 	free(Param);
     }
 
-    UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+    CDBG_INFO(
         "Exiting UpnpRenewSubscriptionAsync\n");
 
     return UPNP_E_SUCCESS;
@@ -1316,7 +1316,7 @@ int UpnpSendActionAsync(
     if(UpnpSdkInit != 1) {
 	return UPNP_E_FINISH;
     }
-    UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+    CDBG_INFO(
 	    "Inside UpnpSendActionAsync\n");
 
     HandleReadLock();
@@ -1362,7 +1362,7 @@ int UpnpSendActionAsync(
 	free(Param);
     }
 
-    UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+    CDBG_INFO(
 	    "Exiting UpnpSendActionAsync \n");
     return UPNP_E_SUCCESS;
 }
@@ -1515,7 +1515,7 @@ int UpnpGetIfInfo(const char *IfName)
 				   GAA_FLAG_SKIP_DNS_SERVER, NULL, adapts,
 				   &adapts_sz);
 	if (ret != ERROR_BUFFER_OVERFLOW) {
-		UpnpPrintf(UPNP_CRITICAL, API, __FILE__, __LINE__,
+		CDBG_INFO(
 			   "GetAdaptersAddresses failed to find list of adapters\n");
 		return UPNP_E_INIT;
 	}
@@ -1531,7 +1531,7 @@ int UpnpGetIfInfo(const char *IfName)
 				   &adapts_sz);
 	if (ret != ERROR_SUCCESS) {
 		free(adapts);
-		UpnpPrintf(UPNP_CRITICAL, API, __FILE__, __LINE__,
+		CDBG_INFO(
 			   "GetAdaptersAddresses failed to find list of adapters\n");
 		return UPNP_E_INIT;
 	}
@@ -1637,7 +1637,7 @@ int UpnpGetIfInfo(const char *IfName)
 	}
 	/* Failed to find a valid interface, or valid address. */
 	if (ifname_found == 0 || valid_addr_found == 0) {
-		UpnpPrintf(UPNP_CRITICAL, API, __FILE__, __LINE__,
+		CDBG_INFO(
 			   "Failed to find an adapter with valid IP addresses for use.\n");
 		return UPNP_E_INVALID_INTERFACE;
 	}
@@ -1661,7 +1661,7 @@ int UpnpGetIfInfo(const char *IfName)
 	}
 	/* Get system interface addresses. */
 	if (getifaddrs(&ifap) != 0) {
-		UpnpPrintf(UPNP_CRITICAL, API, __FILE__, __LINE__,
+		CDBG_INFO(
 			   "getifaddrs failed to find list of addresses\n");
 		return UPNP_E_INIT;
 	}
@@ -1718,7 +1718,7 @@ int UpnpGetIfInfo(const char *IfName)
 	freeifaddrs(ifap);
 	/* Failed to find a valid interface, or valid address. */
 	if (ifname_found == 0 || valid_addr_found == 0) {
-		UpnpPrintf(UPNP_CRITICAL, API, __FILE__, __LINE__,
+		CDBG_INFO(
 			   "Failed to find an adapter with valid IP addresses for use.\n");
 		return UPNP_E_INVALID_INTERFACE;
 	}
@@ -1750,7 +1750,7 @@ int UpnpGetIfInfo(const char *IfName)
 	}
 	/* Create an unbound datagram socket to do the SIOCGIFADDR ioctl on.  */
 	if ((LocalSock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
-		UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+		CDBG_INFO(
 			   "Can't create addrlist socket\n");
 		return UPNP_E_INIT;
 	}
@@ -1759,7 +1759,7 @@ int UpnpGetIfInfo(const char *IfName)
 	ifConf.ifc_ifcu.ifcu_buf = (caddr_t) szBuffer;
 
 	if (ioctl(LocalSock, SIOCGIFCONF, &ifConf) < 0) {
-		UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+		CDBG_INFO(
 			   "DiscoverInterfaces: SIOCGIFCONF returned error\n");
 		close(LocalSock);
 		return UPNP_E_INIT;
@@ -1774,7 +1774,7 @@ int UpnpGetIfInfo(const char *IfName)
 		strncpy(ifReq.ifr_name, pifReq->ifr_name,
 			sizeof(ifReq.ifr_name) - 1);
 		if (ioctl(LocalSock, SIOCGIFFLAGS, &ifReq) < 0) {
-			UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+			CDBG_INFO(
 				   "Can't get interface flags for %s:\n",
 				   ifReq.ifr_name);
 		}
@@ -1817,7 +1817,7 @@ int UpnpGetIfInfo(const char *IfName)
 	close(LocalSock);
 	/* Failed to find a valid interface, or valid address. */
 	if (ifname_found == 0 || valid_addr_found == 0) {
-		UpnpPrintf(UPNP_CRITICAL, API, __FILE__, __LINE__,
+		CDBG_INFO(
 			   "Failed to find an adapter with valid IP addresses for use.\n");
 
 		return UPNP_E_INVALID_INTERFACE;
@@ -1870,7 +1870,7 @@ int UpnpGetIfInfo(const char *IfName)
 		fclose(inet6_procfd);
 	}
 #endif
-	UpnpPrintf(UPNP_INFO, API, __FILE__, __LINE__,
+	CDBG_INFO(
 		   "Interface name=%s, index=%d, v4=%s, v6=%s, ULA or GUA v6=%s\n",
 		   gIF_NAME, gIF_INDEX, gIF_IPV4, gIF_IPV6, gIF_IPV6_ULA_GUA);
 
@@ -1886,7 +1886,7 @@ void UpnpThreadDistribution(struct UpnpNonblockParam *Param)
 {
 	/*int errCode = 0;*/
 
-	UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+	CDBG_INFO(
 		"Inside UpnpThreadDistribution \n");
 
 	switch (Param->FunName) {
@@ -1962,7 +1962,7 @@ void UpnpThreadDistribution(struct UpnpNonblockParam *Param)
 		break;
 	}
 
-	UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+	CDBG_INFO(
 		"Exiting UpnpThreadDistribution\n");
 }
 #endif /* INCLUDE_CLIENT_APIS */
@@ -2023,22 +2023,19 @@ Upnp_Handle_Type GetHandleInfo(
 {
 	Upnp_Handle_Type ret = HND_INVALID;
 
-	UpnpPrintf( UPNP_INFO, API, __FILE__, __LINE__,
-		"GetHandleInfo: entering, Handle is %d\n", Hnd);
+	CDBG_INFO("GetHandleInfo: entering, Handle is %d\n", Hnd);
 
 	if (Hnd < 1 || Hnd >= NUM_HANDLE) {
-		UpnpPrintf(UPNP_INFO, API, __FILE__, __LINE__,
-			"GetHandleInfo: Handle out of range\n");
+		CDBG_INFO("GetHandleInfo: Handle out of range\n");
 	} else if (HandleTable[Hnd] == NULL) {
-		UpnpPrintf(UPNP_CRITICAL, API, __FILE__, __LINE__,
-			"GetHandleInfo: HandleTable[%d] is NULL\n",
+		CDBG_INFO("GetHandleInfo: HandleTable[%d] is NULL\n",
 			Hnd);
 	} else if (HandleTable[Hnd] != NULL) {
 		*HndInfo = (struct Handle_Info *)HandleTable[Hnd];
 		ret = ((struct Handle_Info *)*HndInfo)->HType;
 	}
 
-	UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__, "GetHandleInfo: exiting\n");
+	CDBG_INFO("GetHandleInfo: exiting\n");
 
 	return ret;
 }
@@ -2049,10 +2046,8 @@ int PrintHandleInfo(UpnpClient_Handle Hnd)
     struct Handle_Info * HndInfo;
     if (HandleTable[Hnd] != NULL) {
         HndInfo = HandleTable[Hnd];
-            UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-                "Printing information for Handle_%d\n", Hnd);
-            UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-                "HType_%d\n", HndInfo->HType);
+            CDBG_INFO("Printing information for Handle_%d\n", Hnd);
+            CDBG_INFO("HType_%d\n", HndInfo->HType);
     } else {
         return UPNP_E_INVALID_HANDLE;
     }
@@ -2081,13 +2076,12 @@ int getlocalhostname(char *out, size_t out_len)
 		if (p) {
 			strncpy(out, p, out_len);
 		} else {
-			UpnpPrintf( UPNP_ALL, API, __FILE__, __LINE__,
+			CDBG_INFO(
 				"getlocalhostname: inet_ntop returned error\n" );
 			ret = UPNP_E_INIT;
 		}
 	} else {
-		UpnpPrintf( UPNP_ALL, API, __FILE__, __LINE__,
-			"getlocalhostname: gethostbyname returned error\n" );
+		CDBG_INFO("getlocalhostname: gethostbyname returned error\n" );
 		ret = UPNP_E_INIT;
 	}
 
@@ -2095,8 +2089,7 @@ int getlocalhostname(char *out, size_t out_len)
 	struct ifaddrs *ifap, *ifa;
 
 	if (getifaddrs(&ifap) != 0) {
-		UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-			"DiscoverInterfaces: getifaddrs() returned error\n");
+		CDBG_INFO("DiscoverInterfaces: getifaddrs() returned error\n");
 		return UPNP_E_INIT;
 	}
 
@@ -2121,12 +2114,10 @@ int getlocalhostname(char *out, size_t out_len)
 			if (p) {
 				strncpy(out, p, out_len);
 			} else {
-				UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-					"getlocalhostname: inet_ntop returned error\n");
+				CDBG_INFO("getlocalhostname: inet_ntop returned error\n");
 				ret = UPNP_E_INIT;
 			}
-			UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-				"Inside getlocalhostname: after strncpy %s\n", out);
+			CDBG_INFO("Inside getlocalhostname: after strncpy %s\n", out);
 			break;
 		}
 	}
@@ -2152,7 +2143,7 @@ int getlocalhostname(char *out, size_t out_len)
 	/* Create an unbound datagram socket to do the SIOCGIFADDR ioctl on.  */
 	LocalSock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (LocalSock == INVALID_SOCKET) {
-		UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+		CDBG_INFO(
 			"Can't create addrlist socket\n");
 		return UPNP_E_INIT;
 	}
@@ -2161,7 +2152,7 @@ int getlocalhostname(char *out, size_t out_len)
 	ifConf.ifc_ifcu.ifcu_buf = (caddr_t) szBuffer;
 	nResult = ioctl(LocalSock, SIOCGIFCONF, &ifConf);
 	if (nResult < 0) {
-		UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+		CDBG_INFO(
 			"DiscoverInterfaces: SIOCGIFCONF returned error\n");
 		close(LocalSock);
 		return UPNP_E_INIT;
@@ -2177,7 +2168,7 @@ int getlocalhostname(char *out, size_t out_len)
 		strncpy(ifReq.ifr_name, pifReq->ifr_name,
 			sizeof(ifReq.ifr_name) - 1);
 		if (ioctl(LocalSock, SIOCGIFFLAGS, &ifReq) < 0) {
-			UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
+			CDBG_INFO(
 				"Can't get interface flags for %s:\n",
 				ifReq.ifr_name);
 		}
@@ -2208,12 +2199,10 @@ int getlocalhostname(char *out, size_t out_len)
 	if (p) {
 		strncpy(out, p, out_len);
 	} else {
-		UpnpPrintf( UPNP_ALL, API, __FILE__, __LINE__,
-			"getlocalhostname: inet_ntop returned error\n" );
+		CDBG_INFO("getlocalhostname: inet_ntop returned error\n" );
 		ret = UPNP_E_INIT;
 	}
-	UpnpPrintf(UPNP_ALL, API, __FILE__, __LINE__,
-		"Inside getlocalhostname: after strncpy %s\n", out);
+	CDBG_INFO("Inside getlocalhostname: after strncpy %s\n", out);
 #endif
 	return ret;
 }

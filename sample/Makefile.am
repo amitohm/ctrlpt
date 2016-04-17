@@ -6,10 +6,12 @@
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/upnp/inc \
+	-I$(top_srcdir)/util/inc \
 	-I$(top_srcdir)/threadutil/inc
 
 LDADD = \
 	$(top_builddir)/upnp/libupnp.la \
+	$(top_builddir)/util/libutil.la \
 	$(top_builddir)/threadutil/libthreadutil.la
 
 # samples
@@ -20,13 +22,11 @@ noinst_PROGRAMS += ctrlpt
 ctrlpt_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-I$(srcdir)/common/ \
-	-I$(srcdir)/tvctrlpt
+	-I$(srcdir)/ctrlpt
 endif
 endif
 
 ctrlpt_SOURCES = \
-	common/sample_util.c \
-	common/sample_util.h \
 	ctrlpt.c \
 	ctrlpt.h
 

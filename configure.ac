@@ -700,6 +700,7 @@ AC_CONFIG_FILES([
 	Makefile
 	threadutil/Makefile
 	upnp/Makefile
+	util/Makefile
 	sample/Makefile
 	libupnp.pc
 	])

@@ -58,6 +58,8 @@
 
 #include "upnpapi.h"
 
+#undef DBG_TAG
+#define DBG_TAG "URI"
 
 /*!
  * \brief Returns a 1 if a char is a RESERVED char as defined in 
@@ -526,7 +528,7 @@ int remove_dots(char *in, size_t size)
         return UPNP_E_OUTOF_MEMORY;
 
     Segments[0] = NULL;
-    UpnpPrintf( UPNP_ALL, API, __FILE__, __LINE__,
+    CDBG(
         "REMOVE_DOTS: before: %s\n", in );
     while( ( copyFrom < max ) && ( *copyFrom != '?' )
            && ( *copyFrom != '#' ) ) {
@@ -572,7 +574,7 @@ int remove_dots(char *in, size_t size)
     }
     ( *copyTo ) = 0;
     free( Segments );
-    UpnpPrintf( UPNP_ALL, API, __FILE__, __LINE__,
+    CDBG(
         "REMOVE_DOTS: after: %s\n", in );
     return UPNP_E_SUCCESS;
 }

@@ -45,6 +45,8 @@
 
 #include "upnp.h"
 
+#undef DBG_TAG
+#define DBG_TAG	"CTRLPT"
 /*!
  * Mutex for protecting the global device list in a multi-threaded,
  * asynchronous environment. All functions should lock this mutex before
@@ -97,13 +99,10 @@ int
 CtrlPointDeleteNode( struct TvDeviceNode *node )
 {
 	if (NULL == node) {
-		SampleUtil_Print
-		    ("ERROR: CtrlPointDeleteNode: Node is empty\n");
+		CDBG_ERROR("CtrlPointDeleteNode: Node is empty\n");
 		return ERROR;
 	}
 
-	/*Notify New Device Added */
-	SampleUtil_StateUpdate(NULL, NULL, node->device.UDN, DEVICE_REMOVED);
 	free(node);
 	node = NULL;
 
@@ -129,7 +128,7 @@ int CtrlPointRemoveDevice(const char *UDN)
 
 	curdevnode = GlobalDeviceList;
 	if (!curdevnode) {
-		SampleUtil_Print(
+		CDBG_ERROR(
 			"WARNING: CtrlPointRemoveDevice: Device list empty\n");
 	} else {
 		if (0 == strcmp(curdevnode->device.UDN, UDN)) {
@@ -205,7 +204,7 @@ int CtrlPointRefresh(void)
 	 * waiting for up to 5 seconds for the response */
 	rc = UpnpSearchAsync(ctrlpt_handle, 5, TvDeviceType, NULL);
 	if (UPNP_E_SUCCESS != rc) {
-		SampleUtil_Print("Error sending search request%d\n", rc);
+		CDBG_ERROR("Error sending search request%d\n", rc);
 
 		return ERROR;
 	}
@@ -241,14 +240,14 @@ int CtrlPointSendAction(
 
 	rc = CtrlPointGetDevice(devnum, &devnode);
 	if (SUCCESS == rc) {
-	    printf("%s: Location: %s\n",__func__,devnode->device.Location);
+	    CDBG_ERROR("%s: Location: %s\n",__func__,devnode->device.Location);
 
 	    rc = UpnpSendActionAsync(ctrlpt_handle,
 		    devnode->device.Location,
 		    actionname,NULL,
 		    CtrlPointCallbackEventHandler, NULL);
 	    if (rc != UPNP_E_SUCCESS) {
-		SampleUtil_Print("Error in UpnpSendActionAsync -- %d\n",
+		CDBG_ERROR("Error in UpnpSendActionAsync -- %d\n",
 			rc);
 		rc = ERROR;
 	    }
@@ -337,7 +336,7 @@ int CtrlPointGetDevice(int devnum, struct TvDeviceNode **devnode)
 		tmpdevnode = tmpdevnode->next;
 	}
 	if (!tmpdevnode) {
-		SampleUtil_Print("Error finding TvDevice number -- %d\n",
+		CDBG_ERROR("Error finding TvDevice number -- %d\n",
 				 devnum);
 		return ERROR;
 	}
@@ -363,13 +362,13 @@ int CtrlPointPrintList()
 
 	ithread_mutex_lock(&DeviceListMutex);
 
-	SampleUtil_Print("TvCtrlPointPrintList:\n");
+	CDBG_ERROR("TvCtrlPointPrintList:\n");
 	tmpdevnode = GlobalDeviceList;
 	while (tmpdevnode) {
-		SampleUtil_Print(" %3d -- %s\n", ++i, tmpdevnode->device.UDN);
+		CDBG_ERROR(" %3d -- %s\n", ++i, tmpdevnode->device.UDN);
 		tmpdevnode = tmpdevnode->next;
 	}
-	SampleUtil_Print("\n");
+	CDBG_ERROR("\n");
 	ithread_mutex_unlock(&DeviceListMutex);
 
 	return SUCCESS;
@@ -415,7 +414,7 @@ void CtrlPointAddDevice(
 	deviceType[strlen(TvDeviceType)] = '\0';
 
 	if (strcmp(deviceType, TvDeviceType) == 0) {
-		SampleUtil_Print("Found Ohm device\n");
+		CDBG_ERROR("Found Ohm device\n");
 
 		/* Check if this device is already in the list */
 		tmpdevnode = GlobalDeviceList;
@@ -453,10 +452,6 @@ void CtrlPointAddDevice(
 			} else {
 				GlobalDeviceList = deviceNode;
 			}
-			/*Notify New Device Added */
-			SampleUtil_StateUpdate(NULL, NULL,
-					       deviceNode->device.UDN,
-					       DEVICE_ADDED);
 		}
 	}
 
@@ -493,7 +488,7 @@ int CtrlPointCallbackEventHandler(Upnp_EventType EventType, void *Event, void *C
 		struct Upnp_Discovery *d_event = (struct Upnp_Discovery *)Event;
 
 		if (d_event->ErrCode != UPNP_E_SUCCESS) {
-			SampleUtil_Print("Error in Discovery Callback -- %d\n",
+			CDBG_ERROR("Error in Discovery Callback -- %d\n",
 				d_event->ErrCode);
 		}
 		CtrlPointAddDevice(d_event->Location, d_event->Expires);
@@ -507,18 +502,18 @@ int CtrlPointCallbackEventHandler(Upnp_EventType EventType, void *Event, void *C
 		struct Upnp_Discovery *d_event = (struct Upnp_Discovery *)Event;
 
 		if (d_event->ErrCode != UPNP_E_SUCCESS) {
-			SampleUtil_Print("Error in Discovery ByeBye Callback -- %d\n",
+			CDBG_ERROR("Error in Discovery ByeBye Callback -- %d\n",
 					d_event->ErrCode);
 		}
-		SampleUtil_Print("Received ByeBye for Device: %s\n", d_event->DeviceId);
+		CDBG_ERROR("Received ByeBye for Device: %s\n", d_event->DeviceId);
 		CtrlPointRemoveDevice(d_event->DeviceId);
-		SampleUtil_Print("After byebye:\n");
+		CDBG_ERROR("After byebye:\n");
 		CtrlPointPrintList();
 		break;
 	}
 	/* SOAP Stuff */
 	case UPNP_CONTROL_ACTION_COMPLETE: {
-		SampleUtil_Print("UPNP_CONTROL_ACTION_COMPLETE\n");
+		CDBG_ERROR("UPNP_CONTROL_ACTION_COMPLETE\n");
 		/* No need for any processing here, just print out results.
 		 * Service state table updates are handled by events. */
 		break;
@@ -527,7 +522,7 @@ int CtrlPointCallbackEventHandler(Upnp_EventType EventType, void *Event, void *C
 		struct Upnp_State_Var_Complete *sv_event = (struct Upnp_State_Var_Complete *)Event;
 
 		if (sv_event->ErrCode != UPNP_E_SUCCESS) {
-			SampleUtil_Print("Error in Get Var Complete Callback -- %d\n",
+			CDBG_ERROR("Error in Get Var Complete Callback -- %d\n",
 					sv_event->ErrCode);
 		}
 		break;
@@ -535,7 +530,7 @@ int CtrlPointCallbackEventHandler(Upnp_EventType EventType, void *Event, void *C
 	/* GENA Stuff */
 	case UPNP_EVENT_RECEIVED: {
 		struct Upnp_Event *e_event = (struct Upnp_Event *)Event;
-		SampleUtil_Print("Event -- %d\n",
+		CDBG_ERROR("Event -- %d\n",
 					e_event->EventKey);
 
 		break;
@@ -546,7 +541,7 @@ int CtrlPointCallbackEventHandler(Upnp_EventType EventType, void *Event, void *C
 		struct Upnp_Event_Subscribe *es_event = (struct Upnp_Event_Subscribe *)Event;
 
 		if (es_event->ErrCode != UPNP_E_SUCCESS) {
-			SampleUtil_Print("Error in Event Subscribe Callback -- %d\n",
+			CDBG_ERROR("Error in Event Subscribe Callback -- %d\n",
 					es_event->ErrCode);
 		}
 		break;
@@ -564,9 +559,9 @@ int CtrlPointCallbackEventHandler(Upnp_EventType EventType, void *Event, void *C
 			&TimeOut,
 			newSID);
 		if (ret == UPNP_E_SUCCESS) {
-			SampleUtil_Print("Subscribed to EventURL with SID=%s\n", newSID);
+			CDBG_ERROR("Subscribed to EventURL with SID=%s\n", newSID);
 		} else {
-			SampleUtil_Print("Error Subscribing to EventURL -- %d\n", ret);
+			CDBG_ERROR("Error Subscribing to EventURL -- %d\n", ret);
 		}
 		break;
 	}
@@ -593,7 +588,7 @@ void CtrlPointVerifyTimeouts(int incr)
 	curdevnode = GlobalDeviceList;
 	while (curdevnode) {
 		curdevnode->device.AdvrTimeOut -= incr;
-		/*SampleUtil_Print("Advertisement Timeout: %d\n", curdevnode->device.AdvrTimeOut); */
+		/*CDBG_ERROR("Advertisement Timeout: %d\n", curdevnode->device.AdvrTimeOut); */
 		if (curdevnode->device.AdvrTimeOut <= 0) {
 			/* This advertisement has expired, so we should remove the device
 			 * from the list */
@@ -615,7 +610,7 @@ void CtrlPointVerifyTimeouts(int incr)
 						      curdevnode->device.UDN,
 						      NULL);
 				if (ret != UPNP_E_SUCCESS)
-					SampleUtil_Print
+					CDBG_ERROR
 					    ("Error sending search request for Device UDN: %s -- err = %d\n",
 					     curdevnode->device.UDN, ret);
 			}
@@ -653,30 +648,24 @@ void *CtrlPointTimerLoop(void *args)
  *
  * \return SUCCESS if everything went well, else ERROR.
  */
-int CtrlPointStart(print_string printFunctionPtr, state_update updateFunctionPtr, int combo)
+int CtrlPointStart()
 {
 	ithread_t timer_thread;
 	int rc;
 	unsigned short port = 0;
 	char *ip_address = NULL;
 
-	SampleUtil_Initialize(printFunctionPtr);
-	SampleUtil_RegisterUpdateFunction(updateFunctionPtr);
-
 	ithread_mutex_init(&DeviceListMutex, 0);
 
-	SampleUtil_Print("Initializing UPnP Sdk with\n"
+	CDBG_ERROR("Initializing UPnP Sdk with\n"
 			 "\tipaddress = %s port = %u\n",
 			 ip_address ? ip_address : "{NULL}", port);
 
 	rc = UpnpInit(ip_address, port);
 	if (rc != UPNP_E_SUCCESS) {
-		SampleUtil_Print("WinCEStart: UpnpInit() Error: %d\n", rc);
-		if (!combo) {
-			UpnpFinish();
-
-			return ERROR;
-		}
+		CDBG_ERROR("WinCEStart: UpnpInit() Error: %d\n", rc);
+		UpnpFinish();
+		return ERROR;
 	}
 	if (!ip_address) {
 		ip_address = UpnpGetServerIpAddress();
@@ -685,20 +674,20 @@ int CtrlPointStart(print_string printFunctionPtr, state_update updateFunctionPtr
 		port = UpnpGetServerPort();
 	}
 
-	SampleUtil_Print("UPnP Initialized\n"
+	CDBG_ERROR("UPnP Initialized\n"
 			 "\tipaddress = %s port = %u\n",
 			 ip_address ? ip_address : "{NULL}", port);
-	SampleUtil_Print("Registering Control Point\n");
+	CDBG_ERROR("Registering Control Point\n");
 	rc = UpnpRegisterClient(CtrlPointCallbackEventHandler,
 				&ctrlpt_handle, &ctrlpt_handle);
 	if (rc != UPNP_E_SUCCESS) {
-		SampleUtil_Print("Error registering CP: %d\n", rc);
+		CDBG_ERROR("Error registering CP: %d\n", rc);
 		UpnpFinish();
 
 		return ERROR;
 	}
 
-	SampleUtil_Print("Control Point Registered\n");
+	CDBG_ERROR("Control Point Registered\n");
 
 	CtrlPointRefresh();
 
@@ -715,14 +704,13 @@ int CtrlPointStop(void)
 	CtrlPointRemoveAll();
 	UpnpUnRegisterClient( ctrlpt_handle );
 	UpnpFinish();
-	SampleUtil_Finish();
 
 	return SUCCESS;
 }
 
 void CtrlPointPrintShortHelp(void)
 {
-	SampleUtil_Print(
+	CDBG_ERROR(
 		"Commands:\n"
 		"  Help\n"
 		"  HelpFull\n"
@@ -741,7 +729,7 @@ void CtrlPointPrintShortHelp(void)
 
 void CtrlPointPrintLongHelp(void)
 {
-	SampleUtil_Print(
+	CDBG_ERROR(
 		"\n"
 		"******************************\n"
 		"* TV Control Point Help Info *\n"
@@ -828,12 +816,12 @@ void CtrlPointPrintCommands(void)
 	int i;
 	int numofcmds = (sizeof cmdloop_cmdlist) / sizeof (cmdloop_commands);
 
-	SampleUtil_Print("Valid Commands:\n");
+	CDBG_ERROR("Valid Commands:\n");
 	for (i = 0; i < numofcmds; ++i) {
-		SampleUtil_Print("  %-14s %s\n",
+		CDBG_ERROR("  %-14s %s\n",
 			cmdloop_cmdlist[i].str, cmdloop_cmdlist[i].args);
 	}
-	SampleUtil_Print("\n");
+	CDBG_ERROR("\n");
 }
 
 void *CtrlPointCommandLoop(void *args)
@@ -841,7 +829,7 @@ void *CtrlPointCommandLoop(void *args)
 	char cmdline[100];
 
 	while (1) {
-		SampleUtil_Print("\n>> ");
+		CDBG_ERROR("\n>> ");
 		fgets(cmdline, 100, stdin);
 		CtrlPointProcessCommand(cmdline);
 	}
@@ -874,11 +862,11 @@ int CtrlPointProcessCommand(char *cmdline)
 		}
 	}
 	if (!cmdfound) {
-		SampleUtil_Print("Command not found; try 'Help'\n");
+		CDBG_ERROR("Command not found; try 'Help'\n");
 		return SUCCESS;
 	}
 	if (invalidargs) {
-		SampleUtil_Print("Invalid arguments; try 'Help'\n");
+		CDBG_ERROR("Invalid arguments; try 'Help'\n");
 		return SUCCESS;
 	}
 	switch (cmdnum) {
@@ -921,11 +909,11 @@ int CtrlPointProcessCommand(char *cmdline)
 		}
 		break;
 	default:
-		SampleUtil_Print("Command not implemented; see 'Help'\n");
+		CDBG_ERROR("Command not implemented; see 'Help'\n");
 		break;
 	}
 	if(invalidargs)
-		SampleUtil_Print("Invalid args in command; see 'Help'\n");
+		CDBG_ERROR("Invalid args in command; see 'Help'\n");
 
 	return SUCCESS;
 }
@@ -938,9 +926,9 @@ int main(int argc, char **argv)
     sigset_t sigs_to_catch;
     int code;
 
-    rc = CtrlPointStart(linux_print, NULL, 0);
+    rc = CtrlPointStart();
     if (rc != SUCCESS) {
-	SampleUtil_Print("Error starting UPnP Control Point\n");
+	CDBG_ERROR("Error starting UPnP Control Point\n");
 	return rc;
     }
     /* start a command loop thread */
@@ -952,7 +940,7 @@ int main(int argc, char **argv)
     sigemptyset(&sigs_to_catch);
     sigaddset(&sigs_to_catch, SIGINT);
     sigwait(&sigs_to_catch, &sig);
-    SampleUtil_Print("Shutting down on signal %d...\n", sig);
+    CDBG_ERROR("Shutting down on signal %d...\n", sig);
     rc = CtrlPointStop();
 
     return rc;

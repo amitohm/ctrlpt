@@ -56,6 +56,9 @@
 	#define snprintf _snprintf
 #endif
 
+#undef DBG_TAG
+#define DBG_TAG "GENA"
+
 extern ithread_mutex_t GlobalClientSubscribeMutex;
 
 
@@ -79,12 +82,12 @@ static void GenaAutoRenewSubscription(
 	UpnpString *tmpSID = UpnpString_new();
 
 	if (AUTO_RENEW_TIME == 0) {
-		UpnpPrintf( UPNP_INFO, GENA, __FILE__, __LINE__, "GENA SUB EXPIRED");
+		CDBG_INFO("GENA SUB EXPIRED");
 		sub_struct->ErrCode = UPNP_E_SUCCESS;
 		send_callback = 1;
 		eventType = UPNP_EVENT_SUBSCRIPTION_EXPIRED;
 	} else {
-		UpnpPrintf(UPNP_INFO, GENA, __FILE__, __LINE__, "GENA AUTO RENEW");
+		CDBG_INFO("GENA AUTO RENEW");
 		timeout = sub_struct->TimeOut;
 		UpnpString_set_String(tmpSID, sub_struct->Sid);
 		errCode = genaRenewSubscription(
@@ -108,7 +111,7 @@ static void GenaAutoRenewSubscription(
 			free_upnp_timeout(event);
 			goto end_function;
 		}
-		UpnpPrintf(UPNP_INFO, GENA, __FILE__, __LINE__, "HANDLE IS VALID");
+		CDBG_INFO("HANDLE IS VALID");
 
 		/* make callback */
 		callback_fun = handle_info->Callback;
@@ -531,7 +534,7 @@ int genaSubscribe(
 	memset(temp_sid, 0, sizeof(temp_sid));
 	memset(temp_sid2, 0, sizeof(temp_sid2));
 
-	UpnpPrintf(UPNP_INFO, GENA, __FILE__, __LINE__, "GENA SUBSCRIBE BEGIN");
+	CDBG_INFO("GENA SUBSCRIBE BEGIN");
 
 	UpnpString_clear(out_sid);
 
@@ -549,7 +552,7 @@ int genaSubscribe(
 	return_code = gena_subscribe(PublisherURL, TimeOut, NULL, ActualSID);
 	HandleLock();
 	if (return_code != UPNP_E_SUCCESS) {
-		UpnpPrintf( UPNP_CRITICAL, GENA, __FILE__, __LINE__,
+		CDBG_ERROR(
 			"SUBSCRIBE FAILED in transfer error code: %d returned\n",
 			return_code );
 		goto error_handler;
@@ -639,7 +642,7 @@ int genaRenewSubscription(
 		free_upnp_timeout((upnp_timeout *)tempJob.arg);
 	}
 
-	UpnpPrintf(UPNP_INFO, GENA, __FILE__, __LINE__, "REMOVED AUTO RENEW  EVENT");
+	CDBG_INFO("REMOVED AUTO RENEW  EVENT");
 
 	UpnpClientSubscription_set_RenewEventId(sub, -1);
 	UpnpClientSubscription_assign(sub_copy, sub);
