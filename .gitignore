@@ -24,7 +24,7 @@ upnp/src/soap/.deps/
 upnp/src/ssdp/.deps/
 upnp/src/urlconfig/.deps/
 upnp/src/uuid/.deps/
-util/src/.libs/
+util/.libs/
 util/src/.deps/
 *.o
 *.la

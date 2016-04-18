@@ -222,7 +222,7 @@ SoapSendAction( IN char *action_url,
         err_code = ret_code;
         goto error_handler;
     }
-    printf("Response:---------------\n%s\n",response.msg.entity.buf);
+    CDBG_ERROR("Response:---------------\n%s\n",response.msg.entity.buf);
 
     err_code = UPNP_E_SUCCESS;
 error_handler:
