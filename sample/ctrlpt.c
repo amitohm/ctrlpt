@@ -57,21 +57,8 @@ ithread_mutex_t DeviceListMutex;
 UpnpClient_Handle ctrlpt_handle = -1;
 
 /*! Device type for tv device. */
-const char TvDeviceType[] = "urn:upnp:device:ohm:1";
-const char TvUDN[] = "uuid:Upnp-OhmSwitch-1_0-1234";
-
-/*! Service names.*/
-const char *TvServiceName[] = { "Control" };
-
-/*!
-   Global arrays for storing variable names and counts for 
-   TvControl and TvPicture services 
- */
-const char *TvVarName[TV_SERVICE_SERVCOUNT][TV_MAXVARS] = {
-    {"Power", "Channel"},
-};
-char TvVarCount[TV_SERVICE_SERVCOUNT] =
-    { TV_CONTROL_VARCOUNT };
+const char OhmDeviceType[] = "urn:device:ohm:1";
+const char OhmUDN[] = "OhmSwitch";
 
 /*!
    Timeout to request during subscriptions 
@@ -202,7 +189,7 @@ int CtrlPointRefresh(void)
 	CtrlPointRemoveAll();
 	/* Search for all devices of type tvdevice version 1,
 	 * waiting for up to 5 seconds for the response */
-	rc = UpnpSearchAsync(ctrlpt_handle, 5, TvDeviceType, NULL);
+	rc = UpnpSearchAsync(ctrlpt_handle, 5, OhmDeviceType, NULL);
 	if (UPNP_E_SUCCESS != rc) {
 		CDBG_ERROR("Error sending search request%d\n", rc);
 
@@ -387,39 +374,24 @@ int CtrlPointPrintList()
  *
  ********************************************************************************/
 void CtrlPointAddDevice(
-	const char *location,
-	int expires)
+	struct Upnp_Discovery *d_event)
 {
-	char *deviceType = NULL;
-	char *UDN = NULL;
 	struct TvDeviceNode *deviceNode;
 	struct TvDeviceNode *tmpdevnode;
 	int found = 0;
 
 	ithread_mutex_lock(&DeviceListMutex);
 
-	/* Read key elements from description document */
-	UDN = (char *)malloc(sizeof(char)*(strlen(TvUDN)+1));
-	if (NULL==UDN)
-	    return;
+	CDBG_ERROR("DeviceId %s\n",d_event->DeviceId);
+	CDBG_ERROR("DeviceType %s\n",d_event->DeviceType);
 
-	strncpy(UDN, TvUDN, strlen(TvUDN));
-	UDN[strlen(TvUDN)] = '\0';
-
-	deviceType = (char *)malloc(sizeof(char)*(strlen(TvDeviceType)+1));
-	if (NULL==deviceType)
-	    return;
-
-	strncpy(deviceType, TvDeviceType, strlen(TvDeviceType));
-	deviceType[strlen(TvDeviceType)] = '\0';
-
-	if (strcmp(deviceType, TvDeviceType) == 0) {
+	if (strcmp(d_event->DeviceType, OhmDeviceType) == 0) {
 		CDBG_ERROR("Found Ohm device\n");
 
 		/* Check if this device is already in the list */
 		tmpdevnode = GlobalDeviceList;
 		while (tmpdevnode) {
-			if (strcmp(tmpdevnode->device.UDN, UDN) == 0) {
+			if (strcmp(tmpdevnode->device.UDN, d_event->DeviceId) == 0) {
 				found = 1;
 				break;
 			}
@@ -429,15 +401,16 @@ void CtrlPointAddDevice(
 		if (found) {
 			/* The device is already there, so just update  */
 			/* the advertisement timeout field */
-			tmpdevnode->device.AdvrTimeOut = expires;
+			tmpdevnode->device.AdvrTimeOut = d_event->Expires;
 		} else {
 			/* Create a new device node */
 			deviceNode =
 			    (struct TvDeviceNode *)
 			    malloc(sizeof(struct TvDeviceNode));
-			strcpy(deviceNode->device.UDN, UDN);
-			strcpy(deviceNode->device.Location, location);
-			deviceNode->device.AdvrTimeOut = expires;
+			strcpy(deviceNode->device.UDN, d_event->DeviceId);
+			strcpy(deviceNode->device.DeviceType, d_event->DeviceType);
+			strcpy(deviceNode->device.Location, d_event->Location);
+			deviceNode->device.AdvrTimeOut = d_event->Expires;
 			deviceNode->next = NULL;
 			/* Insert the new device node in the list */
 			if ((tmpdevnode = GlobalDeviceList)) {
@@ -456,11 +429,6 @@ void CtrlPointAddDevice(
 	}
 
 	ithread_mutex_unlock(&DeviceListMutex);
-
-	if (deviceType)
-		free(deviceType);
-	if (UDN)
-		free(UDN);
 }
 
 /********************************************************************************
@@ -491,7 +459,7 @@ int CtrlPointCallbackEventHandler(Upnp_EventType EventType, void *Event, void *C
 			CDBG_ERROR("Error in Discovery Callback -- %d\n",
 				d_event->ErrCode);
 		}
-		CtrlPointAddDevice(d_event->Location, d_event->Expires);
+		CtrlPointAddDevice(d_event);
 		//CtrlPointPrintList();
 		break;
 	}
@@ -607,12 +575,12 @@ void CtrlPointVerifyTimeouts(int incr)
 				 * send out a search request for this device
 				 * UDN to try to renew */
 				ret = UpnpSearchAsync(ctrlpt_handle, incr,
-						      curdevnode->device.UDN,
+						      curdevnode->device.DeviceType,
 						      NULL);
 				if (ret != UPNP_E_SUCCESS)
 					CDBG_ERROR
-					    ("Error sending search request for Device UDN: %s -- err = %d\n",
-					     curdevnode->device.UDN, ret);
+					    ("Error sending search request for Device Type: %s -- err = %d\n",
+					     curdevnode->device.DeviceType, ret);
 			}
 			prevdevnode = curdevnode;
 			curdevnode = curdevnode->next;

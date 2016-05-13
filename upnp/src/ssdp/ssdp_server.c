@@ -91,81 +91,14 @@ struct SSDPSockArray {
 
 int unique_service_name(char *cmd, SsdpEvent *Evt)
 {
-	char TempBuf[COMMAND_LEN];
 	char *TempPtr = NULL;
-	char *Ptr = NULL;
-	char *ptr1 = NULL;
-	char *ptr2 = NULL;
-	char *ptr3 = NULL;
 	int CommandFound = 0;
-	size_t n = (size_t)0;
 
-	if (strstr(cmd, "uuid:schemas") != NULL) {
-		ptr1 = strstr(cmd, ":device");
-		if (ptr1 != NULL)
-			ptr2 = strstr(ptr1 + 1, ":");
-		else
-			return -1;
-		if (ptr2 != NULL)
-			ptr3 = strstr(ptr2 + 1, ":");
-		else
-			return -1;
-		if (ptr3 != NULL) {
-			if (strlen("uuid:") + strlen(ptr3 + 1) >= sizeof Evt->UDN)
-				return -1;
-			snprintf(Evt->UDN, sizeof Evt->UDN, "uuid:%s", ptr3 + 1);
-		}
-		else
-			return -1;
-		ptr1 = strstr(cmd, ":");
-		if (ptr1 != NULL) {
-			n = (size_t)ptr3 - (size_t)ptr1;
-			n = n >= sizeof TempBuf ? sizeof TempBuf - 1 : n;
-			strncpy(TempBuf, ptr1, n);
-			TempBuf[n] = '\0';
-			if (strlen("urn") + strlen(TempBuf) >= sizeof(Evt->DeviceType))
-				return -1;
-			snprintf(Evt->DeviceType, sizeof(Evt->DeviceType),
-				"urn%s", TempBuf);
-		} else
-			return -1;
-		return 0;
-	}
-	if ((TempPtr = strstr(cmd, "uuid")) != NULL) {
-		if ((Ptr = strstr(cmd, "::")) != NULL) {
-			n = (size_t)Ptr - (size_t)TempPtr;
-			n = n >= sizeof Evt->UDN ? sizeof Evt->UDN - 1 : n;
-			strncpy(Evt->UDN, TempPtr, n);
-			Evt->UDN[n] = '\0';
-		} else {
-			memset(Evt->UDN, 0, sizeof(Evt->UDN));
-			strncpy(Evt->UDN, TempPtr, sizeof Evt->UDN - 1);
-		}
-		CommandFound = 1;
-	}
-	if (strstr(cmd, "urn:") != NULL && strstr(cmd, ":service:") != NULL) {
-		if ((TempPtr = strstr(cmd, "urn")) != NULL) {
-			memset(Evt->ServiceType, 0, sizeof Evt->ServiceType);
-			strncpy(Evt->ServiceType, TempPtr,
-				sizeof Evt->ServiceType - 1);
-			CommandFound = 1;
-		}
-	}
 	if (strstr(cmd, "urn:") != NULL && strstr(cmd, ":device:") != NULL) {
 		if ((TempPtr = strstr(cmd, "urn")) != NULL) {
 			memset(Evt->DeviceType, 0, sizeof Evt->DeviceType);
 			strncpy(Evt->DeviceType, TempPtr,
 				sizeof Evt->DeviceType - 1);
-			CommandFound = 1;
-		}
-	}
-	if ((TempPtr = strstr(cmd, "::upnp:rootdevice")) != NULL) {
-		/* Everything before "::upnp::rootdevice" is the UDN. */
-		if (TempPtr != cmd) {
-			n = (size_t)TempPtr - (size_t)cmd;
-			n = n >= sizeof Evt->UDN ? sizeof Evt->UDN - 1 : n;
-			strncpy(Evt->UDN, cmd, n);
-			Evt->UDN[n] = 0;
 			CommandFound = 1;
 		}
 	}
@@ -179,21 +112,15 @@ enum SsdpSearchType ssdp_request_type1(char *cmd)
 {
 	if (strstr(cmd, ":all"))
 		return SSDP_ALL;
-	if (strstr(cmd, ":rootdevice"))
-		return SSDP_ROOTDEVICE;
-	if (strstr(cmd, "uuid:"))
-		return SSDP_DEVICEUDN;
 	if (strstr(cmd, "urn:") && strstr(cmd, ":device:"))
 		return SSDP_DEVICETYPE;
-	if (strstr(cmd, "urn:") && strstr(cmd, ":service:"))
-		return SSDP_SERVICE;
 	return SSDP_SERROR;
 }
 
 int ssdp_request_type(char *cmd, SsdpEvent *Evt)
 {
 	/* clear event */
-	memset(Evt, 0, sizeof(SsdpEvent));
+	//memset(Evt, 0, sizeof(SsdpEvent));
 	unique_service_name(cmd, Evt);
 	Evt->ErrCode = NO_ERROR_FOUND;
 	if ((Evt->RequestType = ssdp_request_type1(cmd)) == SSDP_SERROR) {
@@ -324,14 +251,9 @@ static void ssdp_event_handler_thread(
 	/* send msg to device or ctrlpt */
 	if (hmsg->method == (http_method_t)HTTPMETHOD_NOTIFY ||
 	    hmsg->request_method == (http_method_t)HTTPMETHOD_MSEARCH) {
-#ifdef INCLUDE_CLIENT_APIS
 		ssdp_handle_ctrlpt_msg(hmsg,
 				       &data->dest_addr,
 				       FALSE, NULL);
-#endif /* INCLUDE_CLIENT_APIS */
-	} else {
-		ssdp_handle_device_request(hmsg,
-					   &data->dest_addr);
 	}
 
 	/* free data */
@@ -400,7 +322,7 @@ void readFromSSDPSocket(SOCKET socket)
 			strncpy(ntop_buf, "<Invalid address family>",
 				sizeof(ntop_buf) - 1);
 		}
-		CDBG_INFO(
+		CDBG_ERROR(
 			   "Start of received response ----------------------------------------------------\n"
 			   "%s\n"
 			   "End of received response ------------------------------------------------------\n"

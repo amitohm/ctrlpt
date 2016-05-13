@@ -318,43 +318,6 @@ void *advertiseAndReplyThread(
 	void *data);
 
 /*!
- * \brief Handles the search request. It does the sanity checks of the
- * request and then schedules a thread to send a random time reply
- * (random within maximum time given by the control point to reply).
- */
-static UPNP_INLINE void ssdp_handle_device_request(
-	/* [in] . */
-	http_message_t *hmsg, 
-	/* [in] . */
-	struct sockaddr_storage *dest_addr) {}
-
-/*!
- * \brief Creates the device advertisement request based on the input
- * parameter, and send it to the multicast channel.
- *
- * \return UPNP_E_SUCCESS if successful else appropriate error.
- */
-int DeviceAdvertisement(
-	/* [in] type of the device. */
-	char *DevType,
-	/* [in] flag to indicate if the device is root device. */
-	int RootDev,
-	/* [in] UDN. */
-	char *Udn, 
-	/* [in] Location URL. */
-	char *Location,
-	/* [in] Service duration in sec. */
-	int Duration,
-	/* [in] Device address family. */
-	int AddressFamily,
-	/* [in] PowerState as defined by UPnP Low Power. */
-	int PowerState,
-	/* [in] SleepPeriod as defined by UPnP Low Power. */
-	int SleepPeriod,
-	/* [in] RegistrationState as defined by UPnP Low Power. */
-	int RegistrationState);
-
-/*!
  * \brief Creates the reply packet based on the input parameter, and send it
  * to the client addesss given in its input parameter DestAddr.
  *

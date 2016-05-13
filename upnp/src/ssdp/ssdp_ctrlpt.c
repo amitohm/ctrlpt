@@ -91,7 +91,6 @@ void ssdp_handle_ctrlpt_msg(http_message_t *hmsg, struct sockaddr_storage *dest_
 	struct Upnp_Discovery param;
 	SsdpEvent event;
 	int nt_found;
-	int usn_found;
 	int st_found;
 	char save_char;
 	Upnp_EventType event_type;
@@ -155,7 +154,6 @@ void ssdp_handle_ctrlpt_msg(http_message_t *hmsg, struct sockaddr_storage *dest_
 	/* clear everything */
 	memset(param.DeviceId, 0, sizeof(param.DeviceId));
 	memset(param.DeviceType, 0, sizeof(param.DeviceType));
-	memset(param.ServiceType, 0, sizeof(param.ServiceType));
 	/* not used; version is in ServiceType */
 	param.ServiceVer[0] = '\0';
 	event.UDN[0] = '\0';
@@ -168,19 +166,16 @@ void ssdp_handle_ctrlpt_msg(http_message_t *hmsg, struct sockaddr_storage *dest_
 		nt_found = (ssdp_request_type(hdr_value.buf, &event) == 0);
 		hdr_value.buf[hdr_value.length] = save_char;
 	}
-	usn_found = FALSE;
 	if (httpmsg_find_hdr(hmsg, HDR_USN, &hdr_value) != NULL) {
 		save_char = hdr_value.buf[hdr_value.length];
 		hdr_value.buf[hdr_value.length] = '\0';
-		usn_found = (unique_service_name(hdr_value.buf, &event) == 0);
+		strncpy(event.UDN,hdr_value.buf,hdr_value.length);
 		hdr_value.buf[hdr_value.length] = save_char;
 	}
-	if (nt_found || usn_found) {
+	if (nt_found) {
 		strncpy(param.DeviceId, event.UDN, sizeof(param.DeviceId) - 1);
 		strncpy(param.DeviceType, event.DeviceType,
 			sizeof(param.DeviceType) - 1);
-		strncpy(param.ServiceType, event.ServiceType,
-			sizeof(param.ServiceType) - 1);
 	}
 	/* ADVERT. OR BYEBYE */
 	if (hmsg->is_request) {
@@ -197,7 +192,7 @@ void ssdp_handle_ctrlpt_msg(http_message_t *hmsg, struct sockaddr_storage *dest_
 		}
 		if (is_byebye) {
 			/* check device byebye */
-			if (!nt_found || !usn_found) {
+			if (!nt_found) {
 				return;	/* bad byebye */
 			}
 			event_type = UPNP_DISCOVERY_ADVERTISEMENT_BYEBYE;
@@ -206,7 +201,6 @@ void ssdp_handle_ctrlpt_msg(http_message_t *hmsg, struct sockaddr_storage *dest_
 			 * Expires is valid if positive. This is for testing
 			 * only. Expires should be greater than 1800 (30 mins) */
 			if (!nt_found ||
-			    !usn_found ||
 			    strlen(param.Location) == 0 || param.Expires <= 0) {
 				return;	/* bad advertisement */
 			}
@@ -218,16 +212,20 @@ void ssdp_handle_ctrlpt_msg(http_message_t *hmsg, struct sockaddr_storage *dest_
 		/* reply (to a SEARCH) */
 		/* only checking to see if there is a valid ST header */
 		st_found = FALSE;
-		if (httpmsg_find_hdr(hmsg, HDR_ST, &hdr_value) != NULL) {
-			save_char = hdr_value.buf[hdr_value.length];
-			hdr_value.buf[hdr_value.length] = '\0';
-			st_found =
-			    ssdp_request_type(hdr_value.buf, &event) == 0;
-			hdr_value.buf[hdr_value.length] = save_char;
+		if ( httpmsg_find_hdr(hmsg, HDR_ST, &hdr_value) != NULL) {
+		    save_char = hdr_value.buf[hdr_value.length];
+		    hdr_value.buf[hdr_value.length] = '\0';
+		    st_found = ssdp_request_type(hdr_value.buf, &event) == 0;
+		    hdr_value.buf[hdr_value.length] = save_char;
+		}
+		if (st_found) {
+		    strncpy(param.DeviceId, event.UDN, sizeof(param.DeviceId) - 1);
+		    strncpy(param.DeviceType, event.DeviceType,
+			    sizeof(param.DeviceType) - 1);
 		}
 		if (hmsg->status_code != HTTP_OK ||
 		    param.Expires <= 0 ||
-		    strlen(param.Location) == 0 || !usn_found || !st_found) {
+		    strlen(param.Location) == 0 || !st_found) {
 			return;	/* bad reply */
 		}
 		/* check each current search */

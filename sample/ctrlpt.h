@@ -73,26 +73,12 @@ extern "C" {
 /* This should be the maximum VARCOUNT from above */
 #define TV_MAXVARS		TV_CONTROL_VARCOUNT
 
-extern const char *TvServiceName[];
-extern const char *TvVarName[TV_SERVICE_SERVCOUNT][TV_MAXVARS];
-extern char TvVarCount[];
-
-struct tv_service {
-    char ServiceId[NAME_SIZE];
-    char ServiceType[NAME_SIZE];
-    char *VariableStrVal[TV_MAXVARS];
-    char EventURL[NAME_SIZE];
-    char ControlURL[NAME_SIZE];
-    char SID[NAME_SIZE];
-};
-
 extern struct TvDeviceNode *GlobalDeviceList;
 
 struct TvDevice {
     char UDN[250];
+    char DeviceType[250];
     char Location[250];
-    char FriendlyName[250];
-    char PresURL[250];
     int  AdvrTimeOut;
 };
 
@@ -120,7 +106,7 @@ int 	CtrlPointSendGetAPList(int devnum);
 int	CtrlPointGetDevice(int, struct TvDeviceNode **);
 int	CtrlPointPrintList(void);
 int	CtrlPointPrintDevice(int);
-void	CtrlPointAddDevice(const char *, int); 
+void	CtrlPointAddDevice(struct Upnp_Discovery *);
 
 int	CtrlPointCallbackEventHandler(Upnp_EventType, void *, void *);
 
