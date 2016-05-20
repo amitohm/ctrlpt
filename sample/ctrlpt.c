@@ -297,6 +297,22 @@ int CtrlPointSendSetName(int devnum)
 		TV_SERVICE_CONTROL, devnum, actionname);
 }
 
+int CtrlPointSendReset(int devnum)
+{
+    const char actionname[] =
+	"{\r\n\"command\":\r\n{\"commandName\":\"reset\",\"commandValue\":6,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{}\r\n}";
+	return CtrlPointSendAction(
+		TV_SERVICE_CONTROL, devnum, actionname);
+}
+
+int CtrlPointSendReboot(int devnum)
+{
+    const char actionname[] =
+	"{\r\n\"command\":\r\n{\"commandName\":\"reboot\",\"commandValue\":7,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{}\r\n}";
+	return CtrlPointSendAction(
+		TV_SERVICE_CONTROL, devnum, actionname);
+}
+
 /********************************************************************************
  * CtrlPointGetDevice
  *
@@ -692,6 +708,8 @@ void CtrlPointPrintShortHelp(void)
 		"  CloseAP	<devnum>\n"
 		"  GetDevInfo	<devnum>\n"
 		"  SetName	<devnum>\n"
+		"  Reset	<devnum>\n"
+		"  Reboot	<devnum>\n"
 		"  Exit\n");
 }
 
@@ -744,6 +762,8 @@ enum cmdloop_tvcmds {
 	CLOSEAP,
 	GETDEVINFO,
 	SETNAME,
+	RESET,
+	REBOOT,
 	LSTDEV,
 	REFRESH,
 	EXITCMD
@@ -774,6 +794,8 @@ static struct cmdloop_commands cmdloop_cmdlist[] = {
 	{"CloseAP",   	  CLOSEAP,     2, "<devnum>"},
 	{"GetDevInfo",	  GETDEVINFO,  2, "<devnum>"},
 	{"SetName",   	  SETNAME,     2, "<devnum>"},
+	{"Reset",   	  RESET,     2, "<devnum>"},
+	{"Reboot",   	  REBOOT,     2, "<devnum>"},
 	{"PowerOn",       POWON,       2, "<devnum>"},
 	{"PowerOff",      POWOFF,      2, "<devnum>"},
 	{"Exit",          EXITCMD,     1, ""}
@@ -864,6 +886,12 @@ int CtrlPointProcessCommand(char *cmdline)
 		break;
 	case SETNAME:
 		CtrlPointSendSetName(arg1);
+		break;
+	case RESET:
+		CtrlPointSendReset(arg1);
+		break;
+	case REBOOT:
+		CtrlPointSendReboot(arg1);
 		break;
 	case LSTDEV:
 		CtrlPointPrintList();
