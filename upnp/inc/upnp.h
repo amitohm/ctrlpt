@@ -636,33 +636,15 @@ struct Upnp_Discovery
 	/** The result code of the {\bf UpnpSearchAsync} call. */
 	int  ErrCode;                  
 				     
-	/** The expiration time of the advertisement. */
-	int  Expires;                  
-				     
 	/** The unique device identifier. */
-	char DeviceId[LINE_SIZE];      
+	char UID[LINE_SIZE];
 
 	/** The device type. */
 	char DeviceType[LINE_SIZE];    
 
-	/** The service type. */
-	char ServiceType[LINE_SIZE];
-
-	/** The service version. */
-	char ServiceVer[LINE_SIZE];    
-
 	/** The URL to the UPnP description document for the device. */
 	char Location[LINE_SIZE];      
 
-	/** The operating system the device is running. */
-	char Os[LINE_SIZE];            
-				     
-	/** Date when the response was generated. */
-	char Date[LINE_SIZE];            
-				     
-	/** Confirmation that the MAN header was understood by the device. */
-	char Ext[LINE_SIZE];           
-				     
 	/** The host address of the device responding to the search. */
 	struct sockaddr_storage DestAddr;
 };

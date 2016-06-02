@@ -369,8 +369,8 @@ int http_RecvMessage(
 ExitFunction:
 	if (ret != UPNP_E_SUCCESS) {
 		CDBG_INFO(
-			"(http_RecvMessage): Error %d, http_error_code = %d.\n",
-			ret,
+			"(http_RecvMessage): Line %d Error %d, http_error_code = %d.\n",
+			line, ret,
 			*http_error_code);
 	}
 

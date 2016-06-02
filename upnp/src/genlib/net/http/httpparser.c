@@ -72,7 +72,7 @@ static str_int_entry Http_Method_Table[NUM_HTTP_METHODS] = {
 	{"POST", SOAPMETHOD_POST},
 };
 
-#define NUM_HTTP_HEADER_NAMES 33
+#define NUM_HTTP_HEADER_NAMES 34
 str_int_entry Http_Header_Names[NUM_HTTP_HEADER_NAMES] = {
 	{"ACCEPT", HDR_ACCEPT},
 	{"ACCEPT-CHARSET", HDR_ACCEPT_CHARSET},
@@ -88,6 +88,7 @@ str_int_entry Http_Header_Names[NUM_HTTP_HEADER_NAMES] = {
 	{"CONTENT-RANGE", HDR_CONTENT_RANGE},
 	{"CONTENT-TYPE", HDR_CONTENT_TYPE},
 	{"DATE", HDR_DATE},
+	{"DT", HDR_DT},
 	{"EXT", HDR_EXT},
 	{"HOST", HDR_HOST},
 	{"IF-RANGE", HDR_IF_RANGE},
@@ -105,8 +106,8 @@ str_int_entry Http_Header_Names[NUM_HTTP_HEADER_NAMES] = {
 	{"TE", HDR_TE},
 	{"TIMEOUT", HDR_TIMEOUT},
 	{"TRANSFER-ENCODING", HDR_TRANSFER_ENCODING},
+	{"UID", HDR_UID},
 	{"USER-AGENT", HDR_USER_AGENT},
-	{"USN", HDR_USN},
 };
 
 /***********************************************************************/

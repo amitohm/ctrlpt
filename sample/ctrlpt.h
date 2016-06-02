@@ -73,18 +73,18 @@ extern "C" {
 /* This should be the maximum VARCOUNT from above */
 #define TV_MAXVARS		TV_CONTROL_VARCOUNT
 
-extern struct TvDeviceNode *GlobalDeviceList;
+extern struct DeviceNode *GlobalDeviceList;
 
-struct TvDevice {
-    char UDN[250];
+struct OhmDevice {
+    char UID[250];
     char DeviceType[250];
     char Location[250];
     int  AdvrTimeOut;
 };
 
-struct TvDeviceNode {
-    struct TvDevice device;
-    struct TvDeviceNode *next;
+struct DeviceNode {
+    struct OhmDevice device;
+    struct DeviceNode *next;
 };
 
 extern ithread_mutex_t DeviceListMutex;
@@ -92,7 +92,7 @@ extern ithread_mutex_t DeviceListMutex;
 extern UpnpClient_Handle ctrlpt_handle;
 
 void	CtrlPointPrintHelp(void);
-int	CtrlPointDeleteNode(struct TvDeviceNode *);
+int	CtrlPointDeleteNode(struct DeviceNode *);
 int	CtrlPointRemoveDevice(const char *);
 int	CtrlPointRemoveAll(void);
 int	CtrlPointRefresh(void);
@@ -103,7 +103,7 @@ int	CtrlPointSendPowerOn(int devnum);
 int	CtrlPointSendPowerOff(int devnum);
 int 	CtrlPointSendGetAPList(int devnum);
 
-int	CtrlPointGetDevice(int, struct TvDeviceNode **);
+int	CtrlPointGetDevice(int, struct DeviceNode **);
 int	CtrlPointPrintList(void);
 int	CtrlPointPrintDevice(int);
 void	CtrlPointAddDevice(struct Upnp_Discovery *);

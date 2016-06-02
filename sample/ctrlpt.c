@@ -57,8 +57,8 @@ ithread_mutex_t DeviceListMutex;
 UpnpClient_Handle ctrlpt_handle = -1;
 
 /*! Device type for tv device. */
-const char OhmDeviceType[] = "urn:device:ohm:1";
-const char OhmUDN[] = "OhmSwitch";
+const char OhmSearchType[] = "urn:device:ohm:1";
+const char OhmDeviceType[] = "OhmSwitch";
 
 /*!
    Timeout to request during subscriptions 
@@ -68,7 +68,7 @@ int default_timeout = 1801;
 /*!
    The first node in the global device list, or NULL if empty 
  */
-struct TvDeviceNode *GlobalDeviceList = NULL;
+struct DeviceNode *GlobalDeviceList = NULL;
 
 /********************************************************************************
  * CtrlPointDeleteNode
@@ -83,7 +83,7 @@ struct TvDeviceNode *GlobalDeviceList = NULL;
  *
  ********************************************************************************/
 int
-CtrlPointDeleteNode( struct TvDeviceNode *node )
+CtrlPointDeleteNode( struct DeviceNode *node )
 {
 	if (NULL == node) {
 		CDBG_ERROR("CtrlPointDeleteNode: Node is empty\n");
@@ -103,13 +103,13 @@ CtrlPointDeleteNode( struct TvDeviceNode *node )
  *       Remove a device from the global device list.
  *
  * Parameters:
- *   UDN -- The Unique Device Name for the device to remove
+ *   UID -- The Unique Device Name for the device to remove
  *
  ********************************************************************************/
-int CtrlPointRemoveDevice(const char *UDN)
+int CtrlPointRemoveDevice(const char *UID)
 {
-	struct TvDeviceNode *curdevnode;
-	struct TvDeviceNode *prevdevnode;
+	struct DeviceNode *curdevnode;
+	struct DeviceNode *prevdevnode;
 
 	ithread_mutex_lock(&DeviceListMutex);
 
@@ -118,14 +118,14 @@ int CtrlPointRemoveDevice(const char *UDN)
 		CDBG_ERROR(
 			"WARNING: CtrlPointRemoveDevice: Device list empty\n");
 	} else {
-		if (0 == strcmp(curdevnode->device.UDN, UDN)) {
+		if (0 == strcmp(curdevnode->device.UID, UID)) {
 			GlobalDeviceList = curdevnode->next;
 			CtrlPointDeleteNode(curdevnode);
 		} else {
 			prevdevnode = curdevnode;
 			curdevnode = curdevnode->next;
 			while (curdevnode) {
-				if (strcmp(curdevnode->device.UDN, UDN) == 0) {
+				if (strcmp(curdevnode->device.UID, UID) == 0) {
 					prevdevnode->next = curdevnode->next;
 					CtrlPointDeleteNode(curdevnode);
 					break;
@@ -153,7 +153,7 @@ int CtrlPointRemoveDevice(const char *UDN)
  ********************************************************************************/
 int CtrlPointRemoveAll(void)
 {
-	struct TvDeviceNode *curdevnode, *next;
+	struct DeviceNode *curdevnode, *next;
 
 	ithread_mutex_lock(&DeviceListMutex);
 
@@ -189,7 +189,7 @@ int CtrlPointRefresh(void)
 	CtrlPointRemoveAll();
 	/* Search for all devices of type tvdevice version 1,
 	 * waiting for up to 5 seconds for the response */
-	rc = UpnpSearchAsync(ctrlpt_handle, 5, OhmDeviceType, NULL);
+	rc = UpnpSearchAsync(ctrlpt_handle, 5, OhmSearchType, NULL);
 	if (UPNP_E_SUCCESS != rc) {
 		CDBG_ERROR("Error sending search request%d\n", rc);
 
@@ -220,7 +220,7 @@ int CtrlPointSendAction(
 	int devnum,
 	const char *actionname)
 {
-	struct TvDeviceNode *devnode;
+	struct DeviceNode *devnode;
 	int rc = SUCCESS;
 
 	ithread_mutex_lock(&DeviceListMutex);
@@ -328,10 +328,10 @@ int CtrlPointSendReboot(int devnum)
  *   devnode -- The output device node pointer
  *
  ********************************************************************************/
-int CtrlPointGetDevice(int devnum, struct TvDeviceNode **devnode)
+int CtrlPointGetDevice(int devnum, struct DeviceNode **devnode)
 {
 	int count = devnum;
-	struct TvDeviceNode *tmpdevnode = NULL;
+	struct DeviceNode *tmpdevnode = NULL;
 
 	if (count)
 		tmpdevnode = GlobalDeviceList;
@@ -339,7 +339,7 @@ int CtrlPointGetDevice(int devnum, struct TvDeviceNode **devnode)
 		tmpdevnode = tmpdevnode->next;
 	}
 	if (!tmpdevnode) {
-		CDBG_ERROR("Error finding TvDevice number -- %d\n",
+		CDBG_ERROR("Error finding Device number -- %d\n",
 				 devnum);
 		return ERROR;
 	}
@@ -360,15 +360,15 @@ int CtrlPointGetDevice(int devnum, struct TvDeviceNode **devnode)
  ********************************************************************************/
 int CtrlPointPrintList()
 {
-	struct TvDeviceNode *tmpdevnode;
+	struct DeviceNode *tmpdevnode;
 	int i = 0;
 
 	ithread_mutex_lock(&DeviceListMutex);
 
-	CDBG_ERROR("TvCtrlPointPrintList:\n");
+	CDBG_ERROR("CtrlPointPrintList:\n");
 	tmpdevnode = GlobalDeviceList;
 	while (tmpdevnode) {
-		CDBG_ERROR(" %3d -- %s\n", ++i, tmpdevnode->device.UDN);
+		CDBG_ERROR(" %3d -- %s_%s\n", ++i, tmpdevnode->device.DeviceType, tmpdevnode->device.UID);
 		tmpdevnode = tmpdevnode->next;
 	}
 	CDBG_ERROR("\n");
@@ -392,22 +392,21 @@ int CtrlPointPrintList()
 void CtrlPointAddDevice(
 	struct Upnp_Discovery *d_event)
 {
-	struct TvDeviceNode *deviceNode;
-	struct TvDeviceNode *tmpdevnode;
+	struct DeviceNode *deviceNode;
+	struct DeviceNode *tmpdevnode;
 	int found = 0;
 
 	ithread_mutex_lock(&DeviceListMutex);
 
-	CDBG_ERROR("DeviceId %s\n",d_event->DeviceId);
-	CDBG_ERROR("DeviceType %s\n",d_event->DeviceType);
+	CDBG_INFO("UID %s\n",d_event->UID);
+	CDBG_INFO("DeviceType %s\n",d_event->DeviceType);
 
 	if (strcmp(d_event->DeviceType, OhmDeviceType) == 0) {
-		CDBG_ERROR("Found Ohm device\n");
 
 		/* Check if this device is already in the list */
 		tmpdevnode = GlobalDeviceList;
 		while (tmpdevnode) {
-			if (strcmp(tmpdevnode->device.UDN, d_event->DeviceId) == 0) {
+			if (strcmp(tmpdevnode->device.UID, d_event->UID) == 0) {
 				found = 1;
 				break;
 			}
@@ -415,18 +414,20 @@ void CtrlPointAddDevice(
 		}
 
 		if (found) {
+			CDBG_ERROR("Ohm device exits\n");
 			/* The device is already there, so just update  */
 			/* the advertisement timeout field */
-			tmpdevnode->device.AdvrTimeOut = d_event->Expires;
+			tmpdevnode->device.AdvrTimeOut = 5;
 		} else {
+			CDBG_ERROR("Found Ohm device\n");
 			/* Create a new device node */
 			deviceNode =
-			    (struct TvDeviceNode *)
-			    malloc(sizeof(struct TvDeviceNode));
-			strcpy(deviceNode->device.UDN, d_event->DeviceId);
+			    (struct DeviceNode *)
+			    malloc(sizeof(struct DeviceNode));
+			strcpy(deviceNode->device.UID, d_event->UID);
 			strcpy(deviceNode->device.DeviceType, d_event->DeviceType);
 			strcpy(deviceNode->device.Location, d_event->Location);
-			deviceNode->device.AdvrTimeOut = d_event->Expires;
+			deviceNode->device.AdvrTimeOut = 5;
 			deviceNode->next = NULL;
 			/* Insert the new device node in the list */
 			if ((tmpdevnode = GlobalDeviceList)) {
@@ -489,8 +490,8 @@ int CtrlPointCallbackEventHandler(Upnp_EventType EventType, void *Event, void *C
 			CDBG_ERROR("Error in Discovery ByeBye Callback -- %d\n",
 					d_event->ErrCode);
 		}
-		CDBG_ERROR("Received ByeBye for Device: %s\n", d_event->DeviceId);
-		CtrlPointRemoveDevice(d_event->DeviceId);
+		CDBG_ERROR("Received ByeBye for Device: %s\n", d_event->UID);
+		CtrlPointRemoveDevice(d_event->UID);
 		CDBG_ERROR("After byebye:\n");
 		CtrlPointPrintList();
 		break;
@@ -562,8 +563,8 @@ int CtrlPointCallbackEventHandler(Upnp_EventType EventType, void *Event, void *C
 
 void CtrlPointVerifyTimeouts(int incr)
 {
-	struct TvDeviceNode *prevdevnode;
-	struct TvDeviceNode *curdevnode;
+	struct DeviceNode *prevdevnode;
+	struct DeviceNode *curdevnode;
 	int ret;
 
 	ithread_mutex_lock(&DeviceListMutex);
@@ -589,7 +590,7 @@ void CtrlPointVerifyTimeouts(int incr)
 			if (curdevnode->device.AdvrTimeOut < 2 * incr) {
 				/* This advertisement is about to expire, so
 				 * send out a search request for this device
-				 * UDN to try to renew */
+				 * UID to try to renew */
 				ret = UpnpSearchAsync(ctrlpt_handle, incr,
 						      curdevnode->device.DeviceType,
 						      NULL);

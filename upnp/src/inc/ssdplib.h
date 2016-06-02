@@ -109,15 +109,12 @@ typedef struct SsdpEventStruct {
 	int  ErrCode;
 	int  MaxAge;
 	int  Mx;
-	char UDN[LINE_SIZE];
 	char DeviceType[LINE_SIZE];
+	char UID[LINE_SIZE];
 	/* NT or ST */
-	char ServiceType[LINE_SIZE];
+	char SearchType[LINE_SIZE];
 	char Location[LINE_SIZE];
 	char HostAddr[LINE_SIZE];
-	char Os[LINE_SIZE];
-	char Ext[LINE_SIZE];
-	char Date[LINE_SIZE];
 	struct sockaddr *DestAddr;
 	void * Cookie;
 } SsdpEvent;

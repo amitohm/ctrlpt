@@ -96,9 +96,9 @@ int unique_service_name(char *cmd, SsdpEvent *Evt)
 
 	if (strstr(cmd, "urn:") != NULL && strstr(cmd, ":device:") != NULL) {
 		if ((TempPtr = strstr(cmd, "urn")) != NULL) {
-			memset(Evt->DeviceType, 0, sizeof Evt->DeviceType);
-			strncpy(Evt->DeviceType, TempPtr,
-				sizeof Evt->DeviceType - 1);
+			memset(Evt->SearchType, 0, sizeof(Evt->SearchType));
+			strncpy(Evt->SearchType, TempPtr,
+				sizeof(Evt->SearchType - 1));
 			CommandFound = 1;
 		}
 	}

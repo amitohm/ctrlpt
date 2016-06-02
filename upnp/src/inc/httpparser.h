@@ -126,7 +126,7 @@ typedef enum
 #define HDR_ST				20
 #define HDR_TIMEOUT			21
 #define HDR_TRANSFER_ENCODING		22
-#define HDR_USN				23
+#define HDR_DT				23
 #define HDR_USER_AGENT			24
 
 /* Adding new header difinition */
@@ -142,6 +142,7 @@ typedef enum
 #define HDR_IF_RANGE			34
 #define HDR_RANGE			35
 #define HDR_TE				36
+#define HDR_UID				37
 
 /*! status of parsing */
 typedef enum {
