@@ -165,7 +165,6 @@ SoapSendAction( IN char *action_url,
                 IN char *service_type)
 {
     membuffer request;
-    membuffer responsename;
     int err_code;
     int ret_code;
     http_parser_t response;
@@ -187,7 +186,6 @@ SoapSendAction( IN char *action_url,
         "Inside SoapSendAction():" );
     /* init */
     membuffer_init( &request );
-    membuffer_init( &responsename );
 
     /* parse url */
     if( http_FixStrUrl( action_url, strlen( action_url ), &url ) != 0 ) {
@@ -195,8 +193,7 @@ SoapSendAction( IN char *action_url,
         goto error_handler;
     }
 
-    CDBG_INFO(
-        "path=%.*s, hostport=%.*s\n",
+    CDBG_INFO("path=%.*s, hostport=%.*s\n",
         (int)url.pathquery.size,
         url.pathquery.buff,
         (int)url.hostport.text.size,
@@ -207,11 +204,12 @@ SoapSendAction( IN char *action_url,
     content_length = (off_t)(request_body_len);
     if (http_MakeMessage(
 	&request, 1, 1,
-	"q" "N" "s" "sc" "Uc" "b",
+	"q" "N" "s" "sc" "s" "sc" "Uc" "b",
 	SOAPMETHOD_POST, &url,
         content_length,
         ContentTypeHeader,
 	"SOAPACTION:",
+	"UID: ", "yyccbb12345",
         request_body, request_body_len ) != 0 ) {
         goto error_handler;
     }
@@ -222,12 +220,11 @@ SoapSendAction( IN char *action_url,
         err_code = ret_code;
         goto error_handler;
     }
-    CDBG_ERROR("Response:---------------\n%s\n",response.msg.entity.buf);
+    CDBG_INFO("Response:---------------\n%s\n",response.msg.entity.buf);
 
     err_code = UPNP_E_SUCCESS;
 error_handler:
     membuffer_destroy( &request );
-    membuffer_destroy( &responsename );
     if( got_response ) {
         httpmsg_destroy( &response.msg );
     }

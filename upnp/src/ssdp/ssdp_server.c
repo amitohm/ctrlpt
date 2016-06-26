@@ -322,7 +322,7 @@ void readFromSSDPSocket(SOCKET socket)
 			strncpy(ntop_buf, "<Invalid address family>",
 				sizeof(ntop_buf) - 1);
 		}
-		CDBG_ERROR(
+		CDBG_INFO(
 			   "Start of received response ----------------------------------------------------\n"
 			   "%s\n"
 			   "End of received response ------------------------------------------------------\n"

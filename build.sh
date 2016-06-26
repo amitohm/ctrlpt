@@ -18,7 +18,7 @@ else
     else
 	autoreconf
 	automake
-	./configure --disable-optssdp --disable-device --enable-shared --enable-debug
+	./configure --disable-optssdp --disable-device --disable-shared --enable-debug
     fi
     make
     echo "Build done!!"

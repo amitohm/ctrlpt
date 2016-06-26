@@ -284,7 +284,39 @@ int CtrlPointSendCloseAP(int devnum)
 int CtrlPointSendGetDevInfo(int devnum)
 {
     const char actionname[] =
-	"{\r\n\"command\":\r\n{\"commandName\":\"getProductInfo\",\"commandValue\":4,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{}\r\n}";
+	"{\r\n\"command\":\r\n{\"commandName\":\"getDevInfo\",\"commandValue\":4,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{}\r\n}";
+	return CtrlPointSendAction(
+		TV_SERVICE_CONTROL, devnum, actionname);
+}
+
+int CtrlPointSendGetDevState(int devnum)
+{
+    const char actionname[] =
+	"{\r\n\"command\":\r\n{\"commandName\":\"getDevState\",\"commandValue\":10,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{}\r\n}";
+	return CtrlPointSendAction(
+		TV_SERVICE_CONTROL, devnum, actionname);
+}
+
+int CtrlPointSendSetDevState(int devnum)
+{
+    const char actionname[] =
+	"{\r\n\"command\":\r\n{\"commandName\":\"setDevState\",\"commandValue\":11,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"state\": [{\"id\": 0, \"val\": 1}, {\"id\": 1, \"val\": 0}]}\r\n}";
+	return CtrlPointSendAction(
+		TV_SERVICE_CONTROL, devnum, actionname);
+}
+
+int CtrlPointSubscribe(int devnum)
+{
+    const char actionname[] =
+	"{\r\n\"command\":\r\n{\"commandName\":\"subscribe\",\"commandValue\":8,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{}\r\n}";
+	return CtrlPointSendAction(
+		TV_SERVICE_CONTROL, devnum, actionname);
+}
+
+int CtrlPointUnSubscribe(int devnum)
+{
+    const char actionname[] =
+	"{\r\n\"command\":\r\n{\"commandName\":\"unSubscribe\",\"commandValue\":9,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{}\r\n}";
 	return CtrlPointSendAction(
 		TV_SERVICE_CONTROL, devnum, actionname);
 }
@@ -762,6 +794,10 @@ enum cmdloop_tvcmds {
 	CONNECTTOAP,
 	CLOSEAP,
 	GETDEVINFO,
+	GETDEVSTATE,
+	SETDEVSTATE,
+	SUBSCRIBE,
+	UNSUBSCRIBE,
 	SETNAME,
 	RESET,
 	REBOOT,
@@ -794,9 +830,13 @@ static struct cmdloop_commands cmdloop_cmdlist[] = {
 	{"ConnectToAP",   CONNECTTOAP, 2, "<devnum>"},
 	{"CloseAP",   	  CLOSEAP,     2, "<devnum>"},
 	{"GetDevInfo",	  GETDEVINFO,  2, "<devnum>"},
+	{"GetDevState",	  GETDEVSTATE, 2, "<devnum>"},
+	{"SetDevState",	  SETDEVSTATE, 2, "<devnum>"},
+	{"Subscribe",	  SUBSCRIBE,   2, "<devnum>"},
+	{"UnSubscribe",	  UNSUBSCRIBE, 2, "<devnum>"},
 	{"SetName",   	  SETNAME,     2, "<devnum>"},
-	{"Reset",   	  RESET,     2, "<devnum>"},
-	{"Reboot",   	  REBOOT,     2, "<devnum>"},
+	{"Reset",   	  RESET,       2, "<devnum>"},
+	{"Reboot",   	  REBOOT,      2, "<devnum>"},
 	{"PowerOn",       POWON,       2, "<devnum>"},
 	{"PowerOff",      POWOFF,      2, "<devnum>"},
 	{"Exit",          EXITCMD,     1, ""}
@@ -884,6 +924,18 @@ int CtrlPointProcessCommand(char *cmdline)
 		break;
 	case GETDEVINFO:
 		CtrlPointSendGetDevInfo(arg1);
+		break;
+	case GETDEVSTATE:
+		CtrlPointSendGetDevState(arg1);
+		break;
+	case SETDEVSTATE:
+		CtrlPointSendSetDevState(arg1);
+		break;
+	case SUBSCRIBE:
+		CtrlPointSubscribe(arg1);
+		break;
+	case UNSUBSCRIBE:
+		CtrlPointUnSubscribe(arg1);
 		break;
 	case SETNAME:
 		CtrlPointSendSetName(arg1);
