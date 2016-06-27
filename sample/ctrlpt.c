@@ -289,18 +289,26 @@ int CtrlPointSendGetDevInfo(int devnum)
 		TV_SERVICE_CONTROL, devnum, actionname);
 }
 
-int CtrlPointSendGetDevState(int devnum)
+int CtrlPointSendSetSwitchName(int devnum)
 {
     const char actionname[] =
-	"{\r\n\"command\":\r\n{\"commandName\":\"getDevState\",\"commandValue\":10,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{}\r\n}";
+	"{\r\n\"command\":\r\n{\"commandName\":\"setSwitchName\",\"commandValue\":10,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"state\": [{\"id\": 0, \"name\": \"Fan\"}, {\"id\": 1, \"name\": \"Light\"}]}\r\n}";
 	return CtrlPointSendAction(
 		TV_SERVICE_CONTROL, devnum, actionname);
 }
 
-int CtrlPointSendSetDevState(int devnum)
+int CtrlPointSendSetSwitchType(int devnum)
 {
     const char actionname[] =
-	"{\r\n\"command\":\r\n{\"commandName\":\"setDevState\",\"commandValue\":11,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"state\": [{\"id\": 0, \"val\": 1}, {\"id\": 1, \"val\": 0}]}\r\n}";
+	"{\r\n\"command\":\r\n{\"commandName\":\"setSwitchType\",\"commandValue\":11,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"state\": [{\"id\": 0, \"type\": 1}, {\"id\": 1, \"type\": 2}]}\r\n}";
+	return CtrlPointSendAction(
+		TV_SERVICE_CONTROL, devnum, actionname);
+}
+
+int CtrlPointSendSetSwitchVal(int devnum)
+{
+    const char actionname[] =
+	"{\r\n\"command\":\r\n{\"commandName\":\"setSwitchVal\",\"commandValue\":12,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"state\": [{\"id\": 0, \"val\": 0}, {\"id\": 1, \"val\": 1}]}\r\n}";
 	return CtrlPointSendAction(
 		TV_SERVICE_CONTROL, devnum, actionname);
 }
@@ -794,8 +802,9 @@ enum cmdloop_tvcmds {
 	CONNECTTOAP,
 	CLOSEAP,
 	GETDEVINFO,
-	GETDEVSTATE,
-	SETDEVSTATE,
+	SETSWITCHNAME,
+	SETSWITCHTYPE,
+	SETSWITCHVAL,
 	SUBSCRIBE,
 	UNSUBSCRIBE,
 	SETNAME,
@@ -830,8 +839,9 @@ static struct cmdloop_commands cmdloop_cmdlist[] = {
 	{"ConnectToAP",   CONNECTTOAP, 2, "<devnum>"},
 	{"CloseAP",   	  CLOSEAP,     2, "<devnum>"},
 	{"GetDevInfo",	  GETDEVINFO,  2, "<devnum>"},
-	{"GetDevState",	  GETDEVSTATE, 2, "<devnum>"},
-	{"SetDevState",	  SETDEVSTATE, 2, "<devnum>"},
+	{"SetSwitchName", SETSWITCHNAME,2, "<devnum>"},
+	{"SetSwitchType", SETSWITCHTYPE, 2, "<devnum>"},
+	{"SetSwitchVal",  SETSWITCHVAL, 2, "<devnum>"},
 	{"Subscribe",	  SUBSCRIBE,   2, "<devnum>"},
 	{"UnSubscribe",	  UNSUBSCRIBE, 2, "<devnum>"},
 	{"SetName",   	  SETNAME,     2, "<devnum>"},
@@ -925,11 +935,14 @@ int CtrlPointProcessCommand(char *cmdline)
 	case GETDEVINFO:
 		CtrlPointSendGetDevInfo(arg1);
 		break;
-	case GETDEVSTATE:
-		CtrlPointSendGetDevState(arg1);
+	case SETSWITCHNAME:
+		CtrlPointSendSetSwitchName(arg1);
 		break;
-	case SETDEVSTATE:
-		CtrlPointSendSetDevState(arg1);
+	case SETSWITCHTYPE:
+		CtrlPointSendSetSwitchType(arg1);
+		break;
+	case SETSWITCHVAL:
+		CtrlPointSendSetSwitchVal(arg1);
 		break;
 	case SUBSCRIBE:
 		CtrlPointSubscribe(arg1);

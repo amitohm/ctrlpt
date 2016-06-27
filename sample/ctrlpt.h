@@ -75,6 +75,33 @@ extern "C" {
 
 extern struct DeviceNode *GlobalDeviceList;
 
+typedef enum {
+    CMDVAL_RESERVED = 0,
+    CMDVAL_GETAPLIST,           //1
+    CMDVAL_CONNECTTOAP,         //2
+    CMDVAL_CLOSEAP,             //3
+    CMDVAL_GETDEVINFO,          //4
+    CMDVAL_SETNAME,             //5
+    CMDVAL_RESET,               //6
+    CMDVAL_REBOOT,              //7
+    CMDVAL_SUBSCRIBE,           //8
+    CMDVAL_UNSUBSCRIBE,         //9
+    CMDVAL_SETSWITCHNAME,       //10
+    CMDVAL_SETSWITCHTYPE,       //11
+    CMDVAL_SETSWITCHVAL,        //12
+    CMDVAL_MAX
+} commandValue_t;
+
+/* Used to identify default icon for a particular switch */
+typedef enum {
+    SWITCHTYPE_SWITCH,  //Default
+    SWITCHTYPE_FAN,
+    SWITCHTYPE_BULB,
+    SWITCHTYPE_SOCKET,  //3 PIN connector for appliances
+    SWITCHTYPE_MISC,    //Unknown devices
+    SWITCHTYPE_MAX
+} SwitchType;
+
 struct OhmDevice {
     char UID[250];
     char DeviceType[250];
