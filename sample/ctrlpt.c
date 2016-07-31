@@ -297,18 +297,27 @@ int CtrlPointSendSetSwitchName(int devnum)
 		TV_SERVICE_CONTROL, devnum, actionname);
 }
 
-int CtrlPointSendSetSwitchType(int devnum)
-{
-    const char actionname[] =
-	"{\r\n\"command\":\r\n{\"commandName\":\"setSwitchType\",\"commandValue\":11,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"state\": [{\"id\": 0, \"type\": 1}, {\"id\": 1, \"type\": 2}]}\r\n}";
-	return CtrlPointSendAction(
-		TV_SERVICE_CONTROL, devnum, actionname);
-}
-
 int CtrlPointSendSetSwitchVal(int devnum)
 {
     const char actionname[] =
-	"{\r\n\"command\":\r\n{\"commandName\":\"setSwitchVal\",\"commandValue\":12,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"state\": [{\"id\": 0, \"val\": 0}, {\"id\": 1, \"val\": 1}]}\r\n}";
+	"{\r\n\"command\":\r\n{\"commandName\":\"setSwitchVal\",\"commandValue\":11,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"state\": [{\"id\": 0, \"val\": 0}, {\"id\": 1, \"val\": 1}]}\r\n}";
+	return CtrlPointSendAction(
+		TV_SERVICE_CONTROL, devnum, actionname);
+}
+#if 1
+int CtrlPointSendSetSwitchType(int devnum)
+{
+    const char actionname[] =
+	"{\r\n\"command\":\r\n{\"commandName\":\"setSwitchType\",\"commandValue\":12,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"state\": [{\"id\": 0, \"type\": 1}, {\"id\": 1, \"type\": 2}]}\r\n}";
+	return CtrlPointSendAction(
+		TV_SERVICE_CONTROL, devnum, actionname);
+}
+#endif
+
+int CtrlPointSendAddRule(int devnum)
+{
+    const char actionname[] =
+	"{\r\n\"command\":\r\n{\"commandName\":\"addRule\",\"commandValue\":12,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"ruleId\": \"xxxxxx\", \"ruleType\": 0, \"repeat\": 0, \"days\": [\"Mon\", \"Tue\", \"Wed\", \"Fri\"], \"sOn\": [\"0_xxxx\", \"2_xxxx\"], \"sOff\": [\"1_xxxx\", \"3_xxxx\"], \"sTime\": 600, \"ruleVersion\": \"xxx\"}\r\n}";
 	return CtrlPointSendAction(
 		TV_SERVICE_CONTROL, devnum, actionname);
 }
@@ -454,7 +463,7 @@ void CtrlPointAddDevice(
 		}
 
 		if (found) {
-			CDBG_ERROR("Ohm device exits\n");
+			CDBG_INFO("Ohm device exits\n");
 			/* The device is already there, so just update  */
 			/* the advertisement timeout field */
 			tmpdevnode->device.AdvrTimeOut = 5;
@@ -803,8 +812,9 @@ enum cmdloop_tvcmds {
 	CLOSEAP,
 	GETDEVINFO,
 	SETSWITCHNAME,
-	SETSWITCHTYPE,
 	SETSWITCHVAL,
+	SETSWITCHTYPE,
+	ADDRULE,
 	SUBSCRIBE,
 	UNSUBSCRIBE,
 	SETNAME,
@@ -840,8 +850,9 @@ static struct cmdloop_commands cmdloop_cmdlist[] = {
 	{"CloseAP",   	  CLOSEAP,     2, "<devnum>"},
 	{"GetDevInfo",	  GETDEVINFO,  2, "<devnum>"},
 	{"SetSwitchName", SETSWITCHNAME,2, "<devnum>"},
-	{"SetSwitchType", SETSWITCHTYPE, 2, "<devnum>"},
 	{"SetSwitchVal",  SETSWITCHVAL, 2, "<devnum>"},
+	{"SetSwitchType", SETSWITCHTYPE, 2, "<devnum>"},
+	{"AddRule", 	  ADDRULE, 	2, "<devnum>"},
 	{"Subscribe",	  SUBSCRIBE,   2, "<devnum>"},
 	{"UnSubscribe",	  UNSUBSCRIBE, 2, "<devnum>"},
 	{"SetName",   	  SETNAME,     2, "<devnum>"},
@@ -867,12 +878,13 @@ void CtrlPointPrintCommands(void)
 
 void *CtrlPointCommandLoop(void *args)
 {
-	char cmdline[100];
+	char cmdline[100], *s;
 
 	while (1) {
 		CDBG_ERROR("\n>> ");
-		fgets(cmdline, 100, stdin);
-		CtrlPointProcessCommand(cmdline);
+		s = fgets(cmdline, 100, stdin);
+		if (NULL!=s)
+		    CtrlPointProcessCommand(s);
 	}
 
 	return NULL;
@@ -938,11 +950,14 @@ int CtrlPointProcessCommand(char *cmdline)
 	case SETSWITCHNAME:
 		CtrlPointSendSetSwitchName(arg1);
 		break;
+	case SETSWITCHVAL:
+		CtrlPointSendSetSwitchVal(arg1);
+		break;
 	case SETSWITCHTYPE:
 		CtrlPointSendSetSwitchType(arg1);
 		break;
-	case SETSWITCHVAL:
-		CtrlPointSendSetSwitchVal(arg1);
+	case ADDRULE:
+		CtrlPointSendAddRule(arg1);
 		break;
 	case SUBSCRIBE:
 		CtrlPointSubscribe(arg1);
