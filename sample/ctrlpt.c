@@ -292,7 +292,7 @@ int CtrlPointSendGetDevInfo(int devnum)
 int CtrlPointSendSetSwitchName(int devnum)
 {
     const char actionname[] =
-	"{\r\n\"command\":\r\n{\"commandName\":\"setSwitchName\",\"commandValue\":10,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"state\": [{\"id\": 0, \"name\": \"Fan\"}, {\"id\": 1, \"name\": \"Light\"}]}\r\n}";
+	"{\r\n\"command\":\r\n{\"commandName\":\"setSwitchName\",\"commandValue\":10,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"devices\": [{\"id\": 0, \"name\": \"Fan\"}, {\"id\": 1, \"name\": \"Light\"}]}\r\n}";
 	return CtrlPointSendAction(
 		TV_SERVICE_CONTROL, devnum, actionname);
 }
@@ -300,7 +300,7 @@ int CtrlPointSendSetSwitchName(int devnum)
 int CtrlPointSendSetSwitchVal(int devnum)
 {
     const char actionname[] =
-	"{\r\n\"command\":\r\n{\"commandName\":\"setSwitchVal\",\"commandValue\":11,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"state\": [{\"id\": 0, \"val\": 0}, {\"id\": 1, \"val\": 1}]}\r\n}";
+	"{\r\n\"command\":\r\n{\"commandName\":\"setSwitchVal\",\"commandValue\":11,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"devices\": [{\"id\": 0, \"val\": 1}, {\"id\": 1, \"val\": 1}]}\r\n}";
 	return CtrlPointSendAction(
 		TV_SERVICE_CONTROL, devnum, actionname);
 }
@@ -308,7 +308,7 @@ int CtrlPointSendSetSwitchVal(int devnum)
 int CtrlPointSendSetSwitchType(int devnum)
 {
     const char actionname[] =
-	"{\r\n\"command\":\r\n{\"commandName\":\"setSwitchType\",\"commandValue\":12,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"state\": [{\"id\": 0, \"type\": 1}, {\"id\": 1, \"type\": 2}]}\r\n}";
+	"{\r\n\"command\":\r\n{\"commandName\":\"setSwitchType\",\"commandValue\":12,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"devices\": [{\"id\": 0, \"type\": 1}, {\"id\": 1, \"type\": 2}]}\r\n}";
 	return CtrlPointSendAction(
 		TV_SERVICE_CONTROL, devnum, actionname);
 }
@@ -317,7 +317,11 @@ int CtrlPointSendSetSwitchType(int devnum)
 int CtrlPointSendAddRule(int devnum)
 {
     const char actionname[] =
-	"{\r\n\"command\":\r\n{\"commandName\":\"addRule\",\"commandValue\":12,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"ruleId\": \"xxxxxx\", \"ruleType\": 0, \"repeat\": 0, \"days\": [\"Mon\", \"Tue\", \"Wed\", \"Fri\"], \"sOn\": [\"0_xxxx\", \"2_xxxx\"], \"sOff\": [\"1_xxxx\", \"3_xxxx\"], \"sTime\": 600, \"ruleVersion\": \"xxx\"}\r\n}";
+#if 0
+	"{\r\n\"command\":\r\n{\"commandName\":\"addRule\",\"commandValue\":12,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"ruleId\": \"xxxxxx\", \"ruleVersion\": \"xxxxx\", \"ruleType\": 1, \"repeat\": 0, \"days\": [\"Sat\"], \"sOn\": [\"0_xxxx\", \"2_xxxx\"], \"sOff\": [\"1_xxxx\", \"3_xxxx\"], \"sTime\": 892, \"interval\": 1}\r\n}";
+#else
+	"{\r\n\"command\":\r\n{\"commandName\":\"addRule\",\"commandValue\":12,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"ruleId\": \"xxxxxx\", \"ruleVersion\": \"xxxxx\", \"ruleType\": 2, \"repeat\": 0, \"sOn\": [\"0_xxxx\"], \"interval\": 2}\r\n}";
+#endif
 	return CtrlPointSendAction(
 		TV_SERVICE_CONTROL, devnum, actionname);
 }
