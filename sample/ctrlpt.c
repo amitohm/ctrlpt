@@ -317,11 +317,27 @@ int CtrlPointSendSetSwitchType(int devnum)
 int CtrlPointSendAddRule(int devnum)
 {
     const char actionname[] =
-#if 0
-	"{\r\n\"command\":\r\n{\"commandName\":\"addRule\",\"commandValue\":12,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"ruleId\": \"xxxxxx\", \"ruleVersion\": \"xxxxx\", \"ruleType\": 1, \"repeat\": 0, \"days\": [\"Sat\"], \"sOn\": [\"0_xxxx\", \"2_xxxx\"], \"sOff\": [\"1_xxxx\", \"3_xxxx\"], \"sTime\": 892, \"interval\": 1}\r\n}";
+#if 1
+	"{\r\n\"command\":\r\n{\"commandName\":\"addRule\",\"commandValue\":12,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"ruleId\": \"xx12345\", \"ruleVersion\": \"1\", \"ruleType\": 1, \"repeat\": 0, \"days\": [\"Mon\"], \"sOn\": [\"0_xxxx\", \"2_xxxx\"], \"sOff\": [\"1_xxxx\", \"3_xxxx\"], \"sTime\": 1270, \"interval\": 1}\r\n}";
 #else
-	"{\r\n\"command\":\r\n{\"commandName\":\"addRule\",\"commandValue\":12,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"ruleId\": \"xxxxxx\", \"ruleVersion\": \"xxxxx\", \"ruleType\": 2, \"repeat\": 0, \"sOn\": [\"0_xxxx\"], \"interval\": 2}\r\n}";
+	"{\r\n\"command\":\r\n{\"commandName\":\"addRule\",\"commandValue\":12,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"ruleId\": \"xx12345\", \"ruleVersion\": \"1\", \"ruleType\": 2, \"repeat\": 0, \"sOff\": [\"0_xxxx\", \"2_xxxx\"], \"interval\": 2}\r\n}";
 #endif
+	return CtrlPointSendAction(
+		TV_SERVICE_CONTROL, devnum, actionname);
+}
+
+int CtrlPointSendUpdateRule(int devnum)
+{
+    const char actionname[] =
+	"{\r\n\"command\":\r\n{\"commandName\":\"updateRule\",\"commandValue\":13,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"ruleId\": \"xx12345\", \"ruleVersion\": \"1\", \"ruleType\": 1, \"repeat\": 0, \"days\": [\"Mon\"], \"sOn\": [\"0_xxxx\", \"2_xxxx\"], \"sOff\": [\"1_xxxx\", \"3_xxxx\"], \"sTime\": 1320, \"interval\": 1}\r\n}";
+	return CtrlPointSendAction(
+		TV_SERVICE_CONTROL, devnum, actionname);
+}
+
+int CtrlPointSendDelRule(int devnum)
+{
+    const char actionname[] =
+	"{\r\n\"command\":\r\n{\"commandName\":\"delRule\",\"commandValue\":14,\"commandType\":\"proprietary\"},\r\n\"parameters\":\r\n{\"ruleId\": \"xx12345\"}\r\n}";
 	return CtrlPointSendAction(
 		TV_SERVICE_CONTROL, devnum, actionname);
 }
@@ -819,6 +835,8 @@ enum cmdloop_tvcmds {
 	SETSWITCHVAL,
 	SETSWITCHTYPE,
 	ADDRULE,
+	UPDATERULE,
+	DELRULE,
 	SUBSCRIBE,
 	UNSUBSCRIBE,
 	SETNAME,
@@ -857,6 +875,8 @@ static struct cmdloop_commands cmdloop_cmdlist[] = {
 	{"SetSwitchVal",  SETSWITCHVAL, 2, "<devnum>"},
 	{"SetSwitchType", SETSWITCHTYPE, 2, "<devnum>"},
 	{"AddRule", 	  ADDRULE, 	2, "<devnum>"},
+	{"UpdateRule", 	  UPDATERULE, 	2, "<devnum>"},
+	{"DelRule", 	  DELRULE, 	2, "<devnum>"},
 	{"Subscribe",	  SUBSCRIBE,   2, "<devnum>"},
 	{"UnSubscribe",	  UNSUBSCRIBE, 2, "<devnum>"},
 	{"SetName",   	  SETNAME,     2, "<devnum>"},
@@ -962,6 +982,12 @@ int CtrlPointProcessCommand(char *cmdline)
 		break;
 	case ADDRULE:
 		CtrlPointSendAddRule(arg1);
+		break;
+	case UPDATERULE:
+		CtrlPointSendUpdateRule(arg1);
+		break;
+	case DELRULE:
+		CtrlPointSendDelRule(arg1);
 		break;
 	case SUBSCRIBE:
 		CtrlPointSubscribe(arg1);
